@@ -12,9 +12,8 @@ Nook Companion is a fully static Next.js (App Router + TypeScript) companion app
 ## GitHub Pages Export Configuration
 `next.config.js` is configured with:
 - `output: 'export'`
-- default `basePath: '/nook-companion'`
-- default `assetPrefix: '/nook-companion/'`
-- CI override via `NEXT_PUBLIC_BASE_PATH` so deployment works for any repo name
+- `basePath: '/Test'`
+- `assetPrefix: '/Test/'`
 
 ## Features
 1. Redd-inspired Art Guide (`/art`)
@@ -112,4 +111,4 @@ On push to `main`, it automatically:
 4. Deploys to GitHub Pages
 
 After deploy, site URL:
-- `https://<your-username>.github.io/<repo-name>/`
+- `https://arielramirezx.github.io/Test/`

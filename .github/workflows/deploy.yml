@@ -30,8 +30,6 @@ jobs:
         run: npm install
 
       - name: Build and export static site
-        env:
-          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
         run: npm run build
 
       - name: Add .nojekyll
