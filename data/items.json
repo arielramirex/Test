@@ -1,0 +1,7 @@
+[
+  { "id": "crown", "name": "Royal Crown", "category": "wearable", "price": 1200000, "rarity": "premium" },
+  { "id": "throne", "name": "Throne", "category": "furniture", "price": 800000, "rarity": "premium" },
+  { "id": "grand-piano", "name": "Grand Piano", "category": "furniture", "price": 260000, "rarity": "popular" },
+  { "id": "ring", "name": "Ring", "category": "accessory", "price": 69000, "rarity": "rare" },
+  { "id": "elaborate-kimono", "name": "Elaborate Kimono Stand", "category": "furniture", "price": 220000, "rarity": "rare" }
+]

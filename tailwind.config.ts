@@ -6,14 +6,28 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        mint: '#d9f6f0',
-        peach: '#ffe7d6',
-        sky: '#dff2ff',
-        lilac: '#efe3ff',
-        ink: '#2f3340'
+        mint: '#d9f3e4',
+        sky: '#dfefff',
+        sand: '#f8e7c8',
+        cream: '#fff8eb',
+        meadow: '#c9e6be',
+        night: '#111a31',
+        aurora: '#99f0d6'
+      },
+      borderRadius: {
+        island: '1.5rem'
       },
       boxShadow: {
-        soft: '0 10px 30px rgba(38, 57, 77, 0.12)'
+        float: '0 14px 36px rgba(46, 78, 72, 0.18)',
+        glow: '0 0 30px rgba(153, 240, 214, 0.25)'
+      },
+      backgroundImage: {
+        wood: 'linear-gradient(135deg, #d6b58b 0%, #c79b6d 50%, #b98258 100%)',
+        island: 'radial-gradient(circle at top right, #ffffff 0%, #f2fff8 35%, #dfefff 100%)',
+        nightisland: 'radial-gradient(circle at top right, #24335f 0%, #111a31 52%, #091022 100%)'
+      },
+      fontFamily: {
+        display: ['var(--font-nunito)', 'ui-rounded', 'system-ui', 'sans-serif']
       }
     }
   },

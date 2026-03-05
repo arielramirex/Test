@@ -1,42 +1,73 @@
 # Nook Companion
 
-Nook Companion is a fully static Next.js (App Router + TypeScript) project designed for deployment on GitHub Pages only.
+Nook Companion is a fully static Next.js (App Router + TypeScript) companion app with an Animal Crossing-inspired cozy UI.
 
-## Tech Stack
-- Next.js (App Router)
-- TypeScript
-- Tailwind CSS
-- Local JSON datasets (no backend)
+## Static-Only Setup
+- No backend
+- No API routes
+- No database
+- All data comes from local JSON files
+- All filtering, sorting, searching, and calculators run client-side
 
-## Static Deployment Configuration
-`next.config.js` includes:
+## GitHub Pages Export Configuration
+`next.config.js` is configured with:
 - `output: 'export'`
-- `basePath` and `assetPrefix` for GitHub Pages static hosting
-- Repository-name auto-detection in GitHub Actions (example: repo `Test` -> base path `/Test`)
-- Fallback base path `/nook-companion` outside GitHub Actions
+- `basePath: '/nook-companion'`
+- `assetPrefix: '/nook-companion/'`
 
-This ensures `npm run build` exports a static site to `out/`.
+## Features
+1. Redd-inspired Art Guide (`/art`)
+2. Blathers/CJ-inspired Critter Price Guide (`/critters`)
+3. Leif-inspired Flower Breeding Calculator (`/flowers`)
+4. Isabelle-inspired Seasonal Dashboard (`/seasonal`)
+5. Tom Nook-inspired High Value Items (`/items`)
+6. Villager Popularity page (`/villagers`)
+7. Dark mode toggle with `localStorage` persistence
+
+## UI Components
+- `LeafBadge`
+- `SpeechBubbleCard`
+- `IslandCard`
+- `PastelButton`
+- `FloatingNavigationBar`
+- `ToggleSwitch`
 
 ## Folder Structure
 ```text
 .
 |- .github/workflows/deploy.yml
 |- app/
+|  |- art/page.tsx
+|  |- critters/page.tsx
+|  |- flowers/page.tsx
+|  |- items/page.tsx
+|  |- seasonal/page.tsx
+|  |- villagers/page.tsx
 |  |- globals.css
 |  |- layout.tsx
 |  `- page.tsx
 |- components/
-|  |- Card.tsx
-|  `- DarkModeToggle.tsx
+|  |- features/ThemeControl.tsx
+|  |- layout/FloatingNavigationBar.tsx
+|  |- layout/IslandCard.tsx
+|  `- ui/
+|     |- CharacterPlaceholder.tsx
+|     |- LeafBadge.tsx
+|     |- PastelButton.tsx
+|     |- SpeechBubbleCard.tsx
+|     `- ToggleSwitch.tsx
 |- data/
 |  |- art.json
 |  |- critters.json
 |  |- flowers.json
+|  |- items.json
 |  `- villagers.json
-|- lib/types.ts
+|- lib/
+|  |- hooks/useTheme.tsx
+|  `- types.ts
 |- next.config.js
 |- package.json
-`- README.md
+`- tailwind.config.ts
 ```
 
 ## Local Development
@@ -45,45 +76,39 @@ npm install
 npm run dev
 ```
 
-Production static build:
+## Production Build (Static Export)
 ```bash
 npm run build
 ```
+Build output is generated in `out/`.
 
-## Create and Push GitHub Repository
-1. Create a GitHub repository (for example: `nook-companion`).
-2. In this project folder, run:
+## GitHub Repository Setup
+1. Create a GitHub repository named `nook-companion`.
+2. Push this project to the `main` branch.
+
+Example commands:
 ```bash
 git init
 git add .
 git commit -m "Initial Nook Companion static app"
 git branch -M main
-git remote add origin https://github.com/<your-username>/<repo-name>.git
+git remote add origin https://github.com/<your-username>/nook-companion.git
 git push -u origin main
 ```
 
 ## Enable GitHub Pages
-1. Open the repo on GitHub.
+1. Open repository on GitHub.
 2. Go to `Settings` -> `Pages`.
-3. Under `Build and deployment`, set `Source` to `GitHub Actions`.
+3. Set `Build and deployment` source to `GitHub Actions`.
 
-## Automatic Deployment
-Workflow file:
-- `.github/workflows/deploy.yml`
+## Automatic Deployment Workflow
+Workflow file: `.github/workflows/deploy.yml`
 
-On every push to `main`, it will:
-1. Install dependencies (`npm install`)
-2. Build and export static site (`npm run build`)
-3. Upload `out/` as Pages artifact
-4. Deploy to GitHub Pages
+On push to `main`, it automatically:
+1. Installs dependencies
+2. Runs static build/export
+3. Uploads `out/` artifact
+4. Deploys to GitHub Pages
 
-Site URL pattern:
-- `https://<your-username>.github.io/<repo-name>/`
-
-Example for repo `Test`:
-- `https://arielramirezx.github.io/Test/`
-
-## Notes
-- No server code, API routes, Prisma, or database.
-- All filtering, searching, and calculations run client-side.
-- Data sources are local JSON files in `data/`.
+After deploy, site URL:
+- `https://<your-username>.github.io/nook-companion/`

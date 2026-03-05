@@ -4,7 +4,5 @@
   { "id": "f3", "parentA": "White", "parentB": "White", "result": "Purple" },
   { "id": "f4", "parentA": "Orange", "parentB": "Orange", "result": "Black" },
   { "id": "f5", "parentA": "Purple", "parentB": "Purple", "result": "Green" },
-  { "id": "f6", "parentA": "Red", "parentB": "Red", "result": "Black" },
-  { "id": "f7", "parentA": "Black", "parentB": "Black", "result": "Blue" },
-  { "id": "f8", "parentA": "Blue", "parentB": "Red", "result": "Purple" }
+  { "id": "f6", "parentA": "Black", "parentB": "Black", "result": "Blue" }
 ]

@@ -2,34 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
-}
-
-:root.dark {
-  color-scheme: dark;
+html,
+body {
+  min-height: 100%;
 }
 
 body {
-  @apply bg-gradient-to-b from-mint via-sky to-peach text-ink min-h-screen;
+  @apply bg-island font-display text-slate-800 transition-colors duration-300;
 }
 
 .dark body {
-  @apply from-slate-900 via-slate-800 to-slate-900 text-slate-100;
+  @apply bg-nightisland text-slate-100;
 }
 
-.card {
-  @apply rounded-2xl bg-white/80 p-4 shadow-soft backdrop-blur-sm dark:bg-slate-900/80;
+.page-shell {
+  @apply mx-auto w-full max-w-6xl px-4 pb-24 pt-5 sm:px-6;
 }
 
-.input {
-  @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300 dark:border-slate-700 dark:bg-slate-950;
+.wood-header {
+  @apply rounded-island bg-wood p-5 text-cream shadow-float;
 }
 
-.button {
-  @apply rounded-xl bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600;
+.leaf-accent {
+  position: relative;
 }
 
-.subtle-button {
-  @apply rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium transition hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800;
+.leaf-accent::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle at 30% 30%, #c6f2b8 0, #74c47b 80%);
+  border-radius: 14px 14px 14px 0;
+  transform: rotate(-22deg);
+  opacity: 0.9;
+}
+
+.speech-tail {
+  position: relative;
+}
+
+.speech-tail::before {
+  content: '';
+  position: absolute;
+  left: 30px;
+  bottom: -12px;
+  width: 20px;
+  height: 20px;
+  transform: rotate(45deg);
+  background: inherit;
+  border-radius: 4px;
 }

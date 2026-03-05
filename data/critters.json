@@ -1,14 +1,8 @@
 [
-  { "id": "coelacanth", "name": "Coelacanth", "type": "fish", "price": 15000, "months": [1,2,3,4,5,6,7,8,9,10,11,12] },
-  { "id": "dorado", "name": "Dorado", "type": "fish", "price": 15000, "months": [6,7,8,9] },
-  { "id": "great-white", "name": "Great White Shark", "type": "fish", "price": 15000, "months": [6,7,8,9] },
-  { "id": "ranchu", "name": "Ranchu Goldfish", "type": "fish", "price": 4500, "months": [1,2,3,4,5,6,7,8,9,10,11,12] },
-  { "id": "golden-stag", "name": "Golden Stag", "type": "bug", "price": 12000, "months": [7,8] },
-  { "id": "giraffe-stag", "name": "Giraffe Stag", "type": "bug", "price": 12000, "months": [7,8] },
-  { "id": "horned-hercules", "name": "Horned Hercules", "type": "bug", "price": 12000, "months": [7,8] },
-  { "id": "scorpion", "name": "Scorpion", "type": "bug", "price": 8000, "months": [5,6,7,8,9,10] },
-  { "id": "gigas-giant-clam", "name": "Gigas Giant Clam", "type": "sea", "price": 15000, "months": [5,6,7,8,9] },
-  { "id": "spider-crab", "name": "Spider Crab", "type": "sea", "price": 12000, "months": [3,4] },
-  { "id": "vampire-squid", "name": "Vampire Squid", "type": "sea", "price": 10000, "months": [5,6,7,8] },
-  { "id": "pearl", "name": "Pearl", "type": "sea", "price": 10000, "months": [6,7,8,9] }
+  { "id": "coelacanth", "name": "Coelacanth", "type": "fish", "price": 15000, "months": [1,2,3,4,5,6,7,8,9,10,11,12], "rarity": "rare" },
+  { "id": "golden-stag", "name": "Golden Stag", "type": "bug", "price": 12000, "months": [7,8], "rarity": "rare" },
+  { "id": "horned-hercules", "name": "Horned Hercules", "type": "bug", "price": 12000, "months": [7,8], "rarity": "rare" },
+  { "id": "gigas-giant-clam", "name": "Gigas Giant Clam", "type": "sea", "price": 15000, "months": [5,6,7,8,9], "rarity": "rare" },
+  { "id": "ranchu", "name": "Ranchu Goldfish", "type": "fish", "price": 4500, "months": [1,2,3,4,5,6,7,8,9,10,11,12], "rarity": "common" },
+  { "id": "scorpion", "name": "Scorpion", "type": "bug", "price": 8000, "months": [5,6,7,8,9,10], "rarity": "rare" }
 ]
