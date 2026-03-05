@@ -1,0 +1,58 @@
+[
+  {
+    "id": "academic-painting",
+    "name": "Academic Painting",
+    "hasFake": true,
+    "realHint": "No coffee stain on top-right corner.",
+    "fakeHint": "Visible coffee stain in top-right corner."
+  },
+  {
+    "id": "amazing-painting",
+    "name": "Amazing Painting",
+    "hasFake": true,
+    "realHint": "Figure has no hat.",
+    "fakeHint": "Figure is wearing a hat."
+  },
+  {
+    "id": "basic-painting",
+    "name": "Basic Painting",
+    "hasFake": true,
+    "realHint": "Hair is medium-length and tidy.",
+    "fakeHint": "Hair appears full with bangs."
+  },
+  {
+    "id": "calm-painting",
+    "name": "Calm Painting",
+    "hasFake": false,
+    "realHint": "Always genuine.",
+    "fakeHint": "No fake version exists."
+  },
+  {
+    "id": "famous-painting",
+    "name": "Famous Painting",
+    "hasFake": true,
+    "realHint": "Eyebrows are straight.",
+    "fakeHint": "Eyebrows are arched."
+  },
+  {
+    "id": "gallant-statue",
+    "name": "Gallant Statue",
+    "hasFake": true,
+    "realHint": "No object under right arm.",
+    "fakeHint": "Book is tucked under right arm."
+  },
+  {
+    "id": "informative-statue",
+    "name": "Informative Statue",
+    "hasFake": true,
+    "realHint": "Stone is blue.",
+    "fakeHint": "Stone is glowing bright blue."
+  },
+  {
+    "id": "mystic-statue",
+    "name": "Mystic Statue",
+    "hasFake": true,
+    "realHint": "Earrings are absent.",
+    "fakeHint": "Large hoop earring present."
+  }
+]

@@ -1,0 +1,10 @@
+[
+  { "id": "marshal", "name": "Marshal", "species": "Squirrel", "personality": "Smug", "popularity": 98 },
+  { "id": "raymond", "name": "Raymond", "species": "Cat", "personality": "Smug", "popularity": 99 },
+  { "id": "ankha", "name": "Ankha", "species": "Cat", "personality": "Snooty", "popularity": 95 },
+  { "id": "judy", "name": "Judy", "species": "Cub", "personality": "Snooty", "popularity": 94 },
+  { "id": "sherb", "name": "Sherb", "species": "Goat", "personality": "Lazy", "popularity": 93 },
+  { "id": "iola", "name": "Ione", "species": "Squirrel", "personality": "Normal", "popularity": 92 },
+  { "id": "audie", "name": "Audie", "species": "Wolf", "personality": "Peppy", "popularity": 90 },
+  { "id": "dom", "name": "Dom", "species": "Sheep", "personality": "Jock", "popularity": 89 }
+]
