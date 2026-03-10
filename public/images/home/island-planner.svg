@@ -1,0 +1,17 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480' role='img' aria-label='Island Planner'>
+  <defs>
+    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#b7e4c7'/>
+      <stop offset='100%' stop-color='#8ecae6'/>
+    </linearGradient>
+  </defs>
+  <rect width='640' height='480' rx='40' fill='url(#g)'/>
+  <rect x='85' y='92' width='470' height='300' rx='20' fill='rgba(255,255,255,0.38)'/>
+  <g stroke='rgba(255,255,255,0.7)' stroke-width='2'>
+    <path d='M85 142h470M85 192h470M85 242h470M85 292h470M85 342h470'/>
+    <path d='M145 92v300M205 92v300M265 92v300M325 92v300M385 92v300M445 92v300M505 92v300'/>
+  </g>
+  <rect x='185' y='190' width='120' height='90' rx='10' fill='#f7c8d0'/>
+  <rect x='355' y='230' width='90' height='60' rx='10' fill='#f8ddb1'/>
+  <text x='50%' y='87%' dominant-baseline='middle' text-anchor='middle' font-family='Nunito, Arial, sans-serif' font-size='44' font-weight='800' fill='white'>Island Planner</text>
+</svg>

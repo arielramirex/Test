@@ -41,6 +41,12 @@ const sections = [
     title: 'Seasonal Dashboard',
     description: 'See monthly arrivals, departures, events, and featured items.',
     image: '/images/home/seasonal-dashboard.svg'
+  },
+  {
+    href: '/planner',
+    title: 'Island Planner',
+    description: 'Map terraforming ideas with a grid tool for paths, rivers, cliffs, and buildings.',
+    image: '/images/home/island-planner.svg'
   }
 ];
 

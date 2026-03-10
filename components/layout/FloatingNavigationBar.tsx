@@ -10,7 +10,8 @@ const links = [
   { href: '/flowers', label: 'Flowers' },
   { href: '/seasonal', label: 'Seasonal' },
   { href: '/items', label: 'Items' },
-  { href: '/villagers', label: 'Villagers' }
+  { href: '/villagers', label: 'Villagers' },
+  { href: '/planner', label: 'Planner' }
 ];
 
 export function FloatingNavigationBar() {
