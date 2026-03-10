@@ -60,6 +60,29 @@ export default function HomePage() {
         rightSlot={<ThemeToggle />}
       />
 
+      <section className="relative overflow-hidden rounded-island bg-white/80 p-4 shadow-float dark:bg-slate-900/70">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-mint/35 via-sky/30 to-sand/35 dark:from-emerald-900/20 dark:via-sky-900/10 dark:to-amber-900/20" />
+        <div className="relative grid gap-4 sm:grid-cols-[1.2fr_1fr] sm:items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-600 dark:text-slate-300">Island Visual</p>
+            <h2 className="mt-1 text-xl font-extrabold sm:text-2xl">Plan Your Island Day In One Cozy Dashboard</h2>
+            <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">
+              Browse critters, flowers, villagers, art checks, and seasonal highlights with image-first cards and fast local filters.
+            </p>
+          </div>
+          <div className="relative h-40 overflow-hidden rounded-2xl">
+            <ImageWithFallback
+              src="/images/home/spring-featured.svg"
+              fallbackSrc="/images/home/seasonal-dashboard.svg"
+              alt="Island hero illustration"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 40vw"
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sections.map((section) => (
           <PreviewCard

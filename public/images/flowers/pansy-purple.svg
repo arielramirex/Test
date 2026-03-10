@@ -1,0 +1,13 @@
+﻿<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 260' role='img' aria-label='Pansy Purple'>
+  <defs>
+    <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#d4c1ff'/>
+      <stop offset='100%' stop-color='#9f80ea'/>
+    </linearGradient>
+  </defs>
+  <rect width='360' height='260' rx='28' fill='url(#bg)'/>
+  <circle cx='280' cy='70' r='30' fill='rgba(255,255,255,0.25)'/>
+  <circle cx='88' cy='188' r='40' fill='rgba(255,255,255,0.22)'/>
+  <path d='M180 82c38 0 68 31 68 68s-30 68-68 68-68-31-68-68 30-68 68-68z' fill='rgba(255,255,255,0.35)'/>
+  <text x='50%' y='88%' dominant-baseline='middle' text-anchor='middle' font-family='Nunito, Arial, sans-serif' font-size='22' font-weight='800' fill='white'>Pansy Purple</text>
+</svg>
