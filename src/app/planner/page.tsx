@@ -575,7 +575,7 @@ export default function PlannerPage() {
     setTerrains(layout.terrains);
     setObjects([]);
     setMarkers([]);
-    setActiveTool(layout.activeTool);
+    setActiveTool(layout.activeTool ?? { mode: 'terrain', terrain: 'grass' });
     setStatus(`Created layout "${name}".`);
   };
 
