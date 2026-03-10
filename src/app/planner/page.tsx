@@ -371,16 +371,17 @@ export default function PlannerPage() {
   };
 
   const handleGridCalibration = (next: Partial<GridCalibration>) => {
-    if (typeof next.gridSize === 'number' && next.gridSize !== calibration.gridSize) {
-      const resized = resizeTerrains(terrains, calibration.gridSize, next.gridSize);
+    const nextGridSize = next.gridSize;
+    if (typeof nextGridSize === 'number' && nextGridSize !== calibration.gridSize) {
+      const resized = resizeTerrains(terrains, calibration.gridSize, nextGridSize);
       setTerrains(resized);
       setObjects((current) =>
         current.filter((entry) => {
           const footprint = getObjectFootprint(entry.objectId, entry.orientation ?? 'horizontal');
-          return entry.x + footprint.width <= next.gridSize && entry.y + footprint.height <= next.gridSize;
+          return entry.x + footprint.width <= nextGridSize && entry.y + footprint.height <= nextGridSize;
         })
       );
-      setMarkers((current) => current.filter((marker) => marker.x < next.gridSize && marker.y < next.gridSize));
+      setMarkers((current) => current.filter((marker) => marker.x < nextGridSize && marker.y < nextGridSize));
     }
 
     setCalibration((current) => ({ ...current, ...next }));
