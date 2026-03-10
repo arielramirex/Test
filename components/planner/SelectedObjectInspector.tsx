@@ -52,18 +52,21 @@ export function SelectedObjectInspector({
     );
   }
 
-  const config = objectConfigMap[selected.objectId];
-  const footprint = getObjectFootprint(selected.objectId, selected.orientation ?? 'horizontal');
+  const selectedObject = selected;
+  if (!selectedObject) return null;
+
+  const config = objectConfigMap[selectedObject.objectId];
+  const footprint = getObjectFootprint(selectedObject.objectId, selectedObject.orientation ?? 'horizontal');
 
   return (
     <section className="space-y-3 rounded-2xl bg-white/85 p-4 text-sm shadow-float dark:bg-slate-900/75">
       <h3 className="text-sm font-extrabold uppercase tracking-wide text-slate-600 dark:text-slate-300">Selected Object</h3>
       <div className="rounded-xl bg-slate-100 p-3 dark:bg-slate-800">
-        <p className="font-bold">{config?.name ?? selected.objectId}</p>
+        <p className="font-bold">{config?.name ?? selectedObject.objectId}</p>
         <p>Footprint: {footprint.width}x{footprint.height}</p>
-        <p>Position: ({selected.x}, {selected.y})</p>
+        <p>Position: ({selectedObject.x}, {selectedObject.y})</p>
         <p>Type: {config?.type ?? 'building'}</p>
-        <p>Orientation: {selected.orientation ?? 'horizontal'}</p>
+        <p>Orientation: {selectedObject.orientation ?? 'horizontal'}</p>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <button type="button" onClick={() => onMove(0, -1)} className="rounded-lg bg-slate-100 px-2 py-1 font-bold dark:bg-slate-800">Up</button>
