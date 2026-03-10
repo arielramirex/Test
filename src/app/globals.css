@@ -61,7 +61,12 @@ body {
 }
 
 .hero-logo-shell {
-  @apply flex w-full max-w-[28rem] items-center justify-center rounded-[2rem] bg-white/78 px-5 py-4 shadow-float backdrop-blur-sm dark:bg-slate-950/60;
+  @apply flex w-full max-w-[28rem] items-center justify-center rounded-[2rem] px-5 py-4 shadow-float backdrop-blur-sm;
+  background-color: rgba(255, 255, 255, 0.78);
+}
+
+.dark .hero-logo-shell {
+  background-color: rgba(2, 6, 23, 0.6);
 }
 
 .hero-logo-image {
