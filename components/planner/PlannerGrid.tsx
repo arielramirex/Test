@@ -1,6 +1,7 @@
 import type {
   GridCalibration,
   OverlayMode,
+  PlannerLayerVisibility,
   PlannerMarker,
   PlannerObjectInstance,
   PlannerReferenceLayer,
@@ -20,6 +21,7 @@ export function PlannerGrid({
   referenceLayer,
   selectedObjectId,
   selectedMarkerId,
+  layerVisibility,
   ghost,
   onTileClick,
   onTileHover,
@@ -32,6 +34,7 @@ export function PlannerGrid({
   onReferencePointerDown,
   onReferencePointerMove,
   onReferencePointerUp,
+  onCanvasClickAway,
   viewportRef
 }: {
   terrains: TerrainType[];
@@ -42,6 +45,7 @@ export function PlannerGrid({
   referenceLayer: PlannerReferenceLayer;
   selectedObjectId: string | null;
   selectedMarkerId: string | null;
+  layerVisibility: PlannerLayerVisibility;
   ghost: { x: number | null; y: number | null; objectId: string | null; orientation: 'horizontal' | 'vertical'; valid: boolean };
   onTileClick: (x: number, y: number) => void;
   onTileHover: (x: number, y: number) => void;
@@ -54,6 +58,7 @@ export function PlannerGrid({
   onReferencePointerDown: (clientX: number, clientY: number) => void;
   onReferencePointerMove: (clientX: number, clientY: number) => void;
   onReferencePointerUp: () => void;
+  onCanvasClickAway: () => void;
   viewportRef?: RefObject<HTMLDivElement>;
 }) {
   const gridSize = calibration.gridSize;
@@ -61,12 +66,34 @@ export function PlannerGrid({
   const width = gridSize * tileSize;
   const height = gridSize * tileSize;
 
-  const showImage = overlayMode === 'image' || overlayMode === 'image-grid' || overlayMode === 'full';
-  const showGrid = overlayMode !== 'image';
-  const showObjects = overlayMode === 'full';
+  const showImage = (overlayMode === 'image' || overlayMode === 'image-grid' || overlayMode === 'full') && layerVisibility.image;
+  const showGrid = overlayMode !== 'image' && layerVisibility.grid;
+  const showTerrain = layerVisibility.terrain;
+  const showObjects = overlayMode === 'full' && layerVisibility.buildings;
+  const showMarkers = overlayMode === 'full' && layerVisibility.markers;
+  const showPaths = layerVisibility.paths;
+  const showWater = layerVisibility.water;
+  const showCliffs = layerVisibility.cliffs;
+
+  const activeGuides = (() => {
+    if (ghost.x === null || ghost.y === null || !objects.length || !showObjects) return { vertical: [] as number[], horizontal: [] as number[] };
+    const vertical: number[] = [];
+    const horizontal: number[] = [];
+    objects.forEach((entry) => {
+      if (entry.x === ghost.x) vertical.push(entry.x * tileSize);
+      if (entry.y === ghost.y) horizontal.push(entry.y * tileSize);
+    });
+    return { vertical, horizontal };
+  })();
 
   return (
-    <div ref={viewportRef} className="overflow-auto rounded-2xl border border-white/40 bg-white/70 p-2 shadow-float dark:border-slate-700 dark:bg-slate-900/60">
+    <div
+      ref={viewportRef}
+      className="overflow-auto rounded-2xl border border-white/40 bg-white/70 p-2 shadow-float dark:border-slate-700 dark:bg-slate-900/60"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onCanvasClickAway();
+      }}
+    >
       <div
         className="relative"
         style={{ width: width + Math.abs(calibration.offsetX) + 8, height: height + Math.abs(calibration.offsetY) + 8 }}
@@ -129,7 +156,17 @@ export function PlannerGrid({
                     <PlannerTile
                       x={x}
                       y={y}
-                      terrain={terrain}
+                      terrain={
+                        !showTerrain
+                          ? 'grass'
+                          : terrain === 'path' && !showPaths
+                            ? 'grass'
+                            : terrain === 'water' && !showWater
+                              ? 'grass'
+                              : terrain === 'cliff' && !showCliffs
+                                ? 'grass'
+                                : terrain
+                      }
                       zoom={tileSize}
                       showGrid={calibration.showLines}
                       onClick={onTileClick}
@@ -152,6 +189,21 @@ export function PlannerGrid({
             visible={showObjects}
           />
 
+          {activeGuides.vertical.map((left, index) => (
+            <div
+              key={`v-${left}-${index}`}
+              className="pointer-events-none absolute top-0 z-40 h-full w-[2px] bg-emerald-500/70"
+              style={{ left }}
+            />
+          ))}
+          {activeGuides.horizontal.map((top, index) => (
+            <div
+              key={`h-${top}-${index}`}
+              className="pointer-events-none absolute left-0 z-40 h-[2px] w-full bg-emerald-500/70"
+              style={{ top }}
+            />
+          ))}
+
           <ObjectLayer
             objects={objects}
             tileSize={tileSize}
@@ -164,7 +216,7 @@ export function PlannerGrid({
             markers={markers}
             tileSize={tileSize}
             gridSize={gridSize}
-            visible={showObjects}
+            visible={showMarkers}
             selectedMarkerId={selectedMarkerId}
             onSelectMarker={onMarkerSelect}
             onMarkerPointerDown={onMarkerPointerDown}

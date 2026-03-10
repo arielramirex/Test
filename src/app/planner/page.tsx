@@ -4,32 +4,46 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ExportPanel } from '@/components/planner/ExportPanel';
 import { GridCalibrationPanel } from '@/components/planner/GridCalibrationPanel';
+import { LayerPanel } from '@/components/planner/LayerPanel';
+import { LayoutImportExportPanel } from '@/components/planner/LayoutImportExportPanel';
 import { MarkerPalette } from '@/components/planner/MarkerPalette';
 import { OverlayControls } from '@/components/planner/OverlayControls';
+import { PlannerHelpPanel } from '@/components/planner/PlannerHelpPanel';
 import { PlannerGrid } from '@/components/planner/PlannerGrid';
 import { PlannerLegend } from '@/components/planner/PlannerLegend';
 import { PlannerReferenceControls } from '@/components/planner/PlannerReferenceControls';
 import { PlannerToolbar } from '@/components/planner/PlannerToolbar';
 import { PlannerTopbar } from '@/components/planner/PlannerTopbar';
+import { PresetStarterPanel } from '@/components/planner/PresetStarterPanel';
+import { QuickActionsBar } from '@/components/planner/QuickActionsBar';
 import { SavedLayoutsPanel } from '@/components/planner/SavedLayoutsPanel';
 import { SelectedObjectInspector } from '@/components/planner/SelectedObjectInspector';
+import { TemplateToolPanel } from '@/components/planner/TemplateToolPanel';
 import { SectionHero } from '@/components/ui/SectionHero';
 import {
+  defaultLayerVisibility,
   defaultOverlayMode,
   getObjectFootprint,
+  islandPresets,
+  objectCategoryMap,
   objectConfigMap,
+  PLANNER_UI_STORAGE_KEY,
   plannerGridDefaults,
   plannerReferenceDefaults,
   PLANNER_ACTIVE_LAYOUT_KEY,
   PLANNER_LAYOUTS_KEY,
   PLANNER_STORAGE_KEY,
   placeableObjects,
+  templateTools,
+  type PlannerCategoryFilter,
+  type PlannerLayerVisibility,
   type GridCalibration,
   type OverlayMode,
   type PlannerMarker,
   type PlannerObjectInstance,
   type PlannerReferenceLayer,
   type PlannerSnapshot,
+  type TemplateToolId,
   type PlannerTool,
   type TerrainType
 } from '@/src/data/islandPlanner';
@@ -42,24 +56,43 @@ type PlannerStateSnapshot = {
   markers: PlannerMarker[];
   activeTool: PlannerTool;
   overlayMode: OverlayMode;
+  layerVisibility: PlannerLayerVisibility;
+  categoryFilter: PlannerCategoryFilter;
   calibration: GridCalibration;
   referenceLayer: PlannerReferenceLayer;
   placementOrientation: 'horizontal' | 'vertical';
   brushEnabled: boolean;
   brushSize: number;
+  templateSize: number;
 };
 
-type SidebarTab = 'import' | 'overlay' | 'grid' | 'terrain' | 'buildings' | 'markers' | 'saved' | 'export';
+type SidebarTab =
+  | 'import'
+  | 'overlay'
+  | 'grid'
+  | 'layers'
+  | 'terrain'
+  | 'buildings'
+  | 'templates'
+  | 'presets'
+  | 'markers'
+  | 'saved'
+  | 'export'
+  | 'help';
 
 const tabItems: { id: SidebarTab; label: string }[] = [
   { id: 'terrain', label: 'Terrain' },
   { id: 'buildings', label: 'Buildings' },
+  { id: 'templates', label: 'Templates' },
+  { id: 'presets', label: 'Presets' },
   { id: 'overlay', label: 'Overlay' },
+  { id: 'layers', label: 'Layers' },
   { id: 'grid', label: 'Grid' },
   { id: 'import', label: 'Map Import' },
   { id: 'markers', label: 'Markers' },
   { id: 'saved', label: 'Saved Layout' },
-  { id: 'export', label: 'Export' }
+  { id: 'export', label: 'Export' },
+  { id: 'help', label: 'Help' }
 ];
 
 function createTerrains(gridSize: number, fill: TerrainType = 'grass') {
@@ -116,6 +149,35 @@ function resizeTerrains(current: TerrainType[], previousSize: number, nextSize: 
   return next;
 }
 
+function getTemplateCells(templateId: TemplateToolId, x: number, y: number, size: number) {
+  if (templateId === 'straight-path') {
+    return Array.from({ length: size }, (_, i) => ({ x: x + i, y }));
+  }
+  if (templateId === 'curved-path') {
+    const half = Math.max(2, Math.floor(size / 2));
+    const horiz = Array.from({ length: half }, (_, i) => ({ x: x + i, y }));
+    const vert = Array.from({ length: half }, (_, i) => ({ x: x + half - 1, y: y + i }));
+    return [...horiz, ...vert];
+  }
+  if (templateId === 'plaza-rect') {
+    const width = size;
+    const height = Math.max(2, Math.floor(size / 2));
+    return Array.from({ length: width * height }, (_, i) => ({ x: x + (i % width), y: y + Math.floor(i / width) }));
+  }
+  if (templateId === 'river-strip') {
+    const width = size;
+    const height = 2;
+    return Array.from({ length: width * height }, (_, i) => ({ x: x + (i % width), y: y + Math.floor(i / width) }));
+  }
+  if (templateId === 'pond-block') {
+    return Array.from({ length: size * size }, (_, i) => ({ x: x + (i % size), y: y + Math.floor(i / size) }));
+  }
+  return Array.from({ length: size * Math.max(2, Math.floor(size / 2)) }, (_, i) => ({
+    x: x + (i % size),
+    y: y + Math.floor(i / size)
+  }));
+}
+
 function cloneStateSnapshot(snapshot: PlannerStateSnapshot): PlannerStateSnapshot {
   return {
     terrains: [...snapshot.terrains],
@@ -123,11 +185,14 @@ function cloneStateSnapshot(snapshot: PlannerStateSnapshot): PlannerStateSnapsho
     markers: snapshot.markers.map((entry) => ({ ...entry })),
     activeTool: snapshot.activeTool,
     overlayMode: snapshot.overlayMode,
+    layerVisibility: { ...snapshot.layerVisibility },
+    categoryFilter: snapshot.categoryFilter,
     calibration: { ...snapshot.calibration },
     referenceLayer: { ...snapshot.referenceLayer },
     placementOrientation: snapshot.placementOrientation,
     brushEnabled: snapshot.brushEnabled,
-    brushSize: snapshot.brushSize
+    brushSize: snapshot.brushSize,
+    templateSize: snapshot.templateSize
   };
 }
 
@@ -138,16 +203,20 @@ export default function PlannerPage() {
   const [markers, setMarkers] = useState<PlannerMarker[]>([]);
   const [activeTool, setActiveTool] = useState<PlannerTool>({ mode: 'terrain', terrain: 'grass' });
   const [overlayMode, setOverlayMode] = useState<OverlayMode>(defaultOverlayMode);
+  const [layerVisibility, setLayerVisibility] = useState<PlannerLayerVisibility>(defaultLayerVisibility);
+  const [categoryFilter, setCategoryFilter] = useState<PlannerCategoryFilter>('all');
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [placementOrientation, setPlacementOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
   const [brushEnabled, setBrushEnabled] = useState(true);
   const [brushSize, setBrushSize] = useState(1);
+  const [templateSize, setTemplateSize] = useState(5);
   const [hoverTile, setHoverTile] = useState<{ x: number; y: number } | null>(null);
   const [referenceLayer, setReferenceLayer] = useState<PlannerReferenceLayer>(plannerReferenceDefaults);
   const [status, setStatus] = useState('Tip: choose a tool and tap tiles to start planning.');
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('terrain');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showHelpPanel, setShowHelpPanel] = useState(true);
 
   const [pastHistory, setPastHistory] = useState<PlannerStateSnapshot[]>([]);
   const [futureHistory, setFutureHistory] = useState<PlannerStateSnapshot[]>([]);
@@ -174,11 +243,14 @@ export default function PlannerPage() {
     markers: markers.map((marker) => ({ ...marker })),
     activeTool,
     overlayMode,
+    layerVisibility,
+    categoryFilter,
     calibration: { ...calibration },
     referenceLayer: { ...referenceLayer },
     placementOrientation,
     brushEnabled,
-    brushSize
+    brushSize,
+    templateSize
   });
 
   const applySnapshot = (snapshot: PlannerStateSnapshot) => {
@@ -187,11 +259,14 @@ export default function PlannerPage() {
     setMarkers(snapshot.markers);
     setActiveTool(snapshot.activeTool);
     setOverlayMode(snapshot.overlayMode);
+    setLayerVisibility(snapshot.layerVisibility);
+    setCategoryFilter(snapshot.categoryFilter);
     setCalibration(snapshot.calibration);
     setReferenceLayer(snapshot.referenceLayer);
     setPlacementOrientation(snapshot.placementOrientation);
     setBrushEnabled(snapshot.brushEnabled);
     setBrushSize(snapshot.brushSize);
+    setTemplateSize(snapshot.templateSize);
     setSelectedObjectId(null);
     setSelectedMarkerId(null);
   };
@@ -205,6 +280,7 @@ export default function PlannerPage() {
     const stored = localStorage.getItem(PLANNER_STORAGE_KEY);
     const storedLayouts = localStorage.getItem(PLANNER_LAYOUTS_KEY);
     const storedActiveLayout = localStorage.getItem(PLANNER_ACTIVE_LAYOUT_KEY);
+    const storedUi = localStorage.getItem(PLANNER_UI_STORAGE_KEY);
 
     if (storedLayouts) {
       try {
@@ -219,6 +295,14 @@ export default function PlannerPage() {
     }
 
     if (storedActiveLayout) setActiveLayoutId(storedActiveLayout);
+    if (storedUi) {
+      try {
+        const uiState = JSON.parse(storedUi) as { showHelpPanel?: boolean };
+        if (typeof uiState.showHelpPanel === 'boolean') setShowHelpPanel(uiState.showHelpPanel);
+      } catch {
+        localStorage.removeItem(PLANNER_UI_STORAGE_KEY);
+      }
+    }
 
     if (!stored) return;
 
@@ -238,10 +322,13 @@ export default function PlannerPage() {
       if (Array.isArray(parsed.markers)) setMarkers(parsed.markers);
       if (parsed.activeTool) setActiveTool(parsed.activeTool);
       if (parsed.overlayMode) setOverlayMode(parsed.overlayMode);
+      if (parsed.layerVisibility) setLayerVisibility({ ...defaultLayerVisibility, ...parsed.layerVisibility });
+      if (parsed.categoryFilter) setCategoryFilter(parsed.categoryFilter);
       if (parsed.referenceLayer) setReferenceLayer({ ...plannerReferenceDefaults, ...parsed.referenceLayer });
       if (parsed.placementOrientation) setPlacementOrientation(parsed.placementOrientation);
       if (typeof parsed.brushEnabled === 'boolean') setBrushEnabled(parsed.brushEnabled);
       if (typeof parsed.brushSize === 'number') setBrushSize(Math.max(1, Math.min(3, parsed.brushSize)));
+      if (typeof parsed.templateSize === 'number') setTemplateSize(Math.max(2, Math.min(12, parsed.templateSize)));
     } catch {
       localStorage.removeItem(PLANNER_STORAGE_KEY);
     }
@@ -254,11 +341,14 @@ export default function PlannerPage() {
       markers,
       activeTool,
       overlayMode,
+      layerVisibility,
+      categoryFilter,
       calibration,
       referenceLayer,
       placementOrientation,
       brushEnabled,
-      brushSize
+      brushSize,
+      templateSize
     };
 
     try {
@@ -276,7 +366,11 @@ export default function PlannerPage() {
         setStatus('Saved planner edits, but the image is too large for localStorage. You may need to re-upload it later.');
       }
     }
-  }, [terrains, objects, markers, activeTool, overlayMode, calibration, referenceLayer, placementOrientation, brushEnabled, brushSize]);
+  }, [terrains, objects, markers, activeTool, overlayMode, layerVisibility, categoryFilter, calibration, referenceLayer, placementOrientation, brushEnabled, brushSize, templateSize]);
+
+  useEffect(() => {
+    localStorage.setItem(PLANNER_UI_STORAGE_KEY, JSON.stringify({ showHelpPanel }));
+  }, [showHelpPanel]);
 
   useEffect(() => {
     localStorage.setItem(PLANNER_LAYOUTS_KEY, JSON.stringify(savedLayouts));
@@ -324,6 +418,55 @@ export default function PlannerPage() {
     };
   }, [calibration.gridSize, calibration.tileSize, referenceLayer.locked]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
+        event.preventDefault();
+        handleRedo();
+        return;
+      }
+
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (selectedObjectId) {
+          event.preventDefault();
+          deleteSelectedObject();
+        }
+        if (selectedMarkerId) {
+          event.preventDefault();
+          deleteSelectedMarker();
+        }
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        setSelectedObjectId(null);
+        setSelectedMarkerId(null);
+        return;
+      }
+
+      if (event.key.toLowerCase() === 'b') {
+        setActiveTool({ mode: 'place', objectId: 'player-house' });
+      }
+
+      if (event.key.toLowerCase() === 't') {
+        setActiveTool({ mode: 'terrain', terrain: 'path' });
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedObjectId, selectedMarkerId]);
+
   const applyTerrainAt = (x: number, y: number, terrain: TerrainType) => {
     setTerrains((current) => {
       const next = [...current];
@@ -342,6 +485,10 @@ export default function PlannerPage() {
 
   const handleTileClick = (x: number, y: number) => {
     const objectAtTile = getObjectAtTile(objects, x, y);
+    if (activeTool.mode !== 'select' && (selectedObjectId || selectedMarkerId)) {
+      setSelectedObjectId(null);
+      setSelectedMarkerId(null);
+    }
 
     if (activeTool.mode === 'terrain') {
       commitHistory();
@@ -387,6 +534,25 @@ export default function PlannerPage() {
       return;
     }
 
+    if (activeTool.mode === 'template') {
+      const template = templateTools.find((entry) => entry.id === activeTool.templateId);
+      if (!template) return;
+      const cells = getTemplateCells(template.id, x, y, templateSize).filter(
+        (cell) => cell.x >= 0 && cell.y >= 0 && cell.x < calibration.gridSize && cell.y < calibration.gridSize
+      );
+      if (!cells.length) return;
+      commitHistory();
+      setTerrains((current) => {
+        const next = [...current];
+        cells.forEach((cell) => {
+          next[tileIndex(cell.x, cell.y, calibration.gridSize)] = template.terrain;
+        });
+        return next;
+      });
+      setStatus(`Applied ${template.name} template.`);
+      return;
+    }
+
     if (activeTool.mode === 'select') {
       if (selectedObjectId) {
         const selectedObject = objects.find((entry) => entry.instanceId === selectedObjectId);
@@ -415,6 +581,10 @@ export default function PlannerPage() {
         setSelectedObjectId(objectAtTile.instanceId);
         setSelectedMarkerId(null);
         setStatus(`Selected ${objectConfigMap[objectAtTile.objectId]?.name ?? 'object'} for moving.`);
+      } else {
+        setSelectedObjectId(null);
+        setSelectedMarkerId(null);
+        setStatus('Selection cleared.');
       }
     }
   };
@@ -492,6 +662,18 @@ export default function PlannerPage() {
     viewportRef.current?.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
   };
 
+  const fitCanvasToScreen = () => {
+    setCalibration((current) => ({ ...current, tileSize: 20, offsetX: 0, offsetY: 0 }));
+    viewportRef.current?.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+  };
+
+  const toggleLayer = (key: keyof PlannerLayerVisibility) => {
+    setLayerVisibility((current) => ({ ...current, [key]: !current[key] }));
+    if (key === 'grid') {
+      setCalibration((current) => ({ ...current, showLines: !current.showLines }));
+    }
+  };
+
   const selectedObject = useMemo(
     () => objects.find((entry) => entry.instanceId === selectedObjectId) ?? null,
     [objects, selectedObjectId]
@@ -501,6 +683,17 @@ export default function PlannerPage() {
     () => markers.find((entry) => entry.id === selectedMarkerId) ?? null,
     [markers, selectedMarkerId]
   );
+
+  const filteredObjects = useMemo(() => {
+    if (categoryFilter === 'all') return objects;
+    if (categoryFilter === 'terrain' || categoryFilter === 'markers') return [];
+    return objects.filter((entry) => objectCategoryMap[entry.objectId] === categoryFilter);
+  }, [objects, categoryFilter]);
+
+  const filteredMarkers = useMemo(() => {
+    if (categoryFilter === 'all' || categoryFilter === 'markers') return markers;
+    return [];
+  }, [markers, categoryFilter]);
 
   const ghostPreview = useMemo(() => {
     if (activeTool.mode !== 'place') {
@@ -535,11 +728,14 @@ export default function PlannerPage() {
       markers,
       activeTool,
       overlayMode,
+      layerVisibility,
+      categoryFilter,
       calibration,
       referenceLayer,
       placementOrientation,
       brushEnabled,
-      brushSize
+      brushSize,
+      templateSize
     };
 
     setSavedLayouts((current) => {
@@ -564,11 +760,14 @@ export default function PlannerPage() {
       markers: [],
       activeTool: { mode: 'terrain', terrain: 'grass' },
       overlayMode: defaultOverlayMode,
+      layerVisibility: defaultLayerVisibility,
+      categoryFilter: 'all',
       calibration,
       referenceLayer,
       placementOrientation: 'horizontal',
       brushEnabled: true,
-      brushSize: 1
+      brushSize: 1,
+      templateSize: 5
     };
     setSavedLayouts((current) => [layout, ...current]);
     setActiveLayoutId(layout.id);
@@ -576,6 +775,10 @@ export default function PlannerPage() {
     setObjects([]);
     setMarkers([]);
     setActiveTool(layout.activeTool ?? { mode: 'terrain', terrain: 'grass' });
+    setOverlayMode(layout.overlayMode ?? defaultOverlayMode);
+    setLayerVisibility({ ...defaultLayerVisibility });
+    setCategoryFilter('all');
+    setTemplateSize(5);
     setStatus(`Created layout "${name}".`);
   };
 
@@ -598,11 +801,14 @@ export default function PlannerPage() {
       markers: layout.markers ?? [],
       activeTool: layout.activeTool ?? { mode: 'terrain', terrain: 'grass' },
       overlayMode: layout.overlayMode ?? defaultOverlayMode,
+      layerVisibility: { ...defaultLayerVisibility, ...layout.layerVisibility },
+      categoryFilter: layout.categoryFilter ?? 'all',
       calibration: nextCalibration,
       referenceLayer: { ...plannerReferenceDefaults, ...layout.referenceLayer },
       placementOrientation: layout.placementOrientation ?? 'horizontal',
       brushEnabled: layout.brushEnabled ?? true,
-      brushSize: Math.max(1, Math.min(3, layout.brushSize ?? 1))
+      brushSize: Math.max(1, Math.min(3, layout.brushSize ?? 1)),
+      templateSize: Math.max(2, Math.min(12, layout.templateSize ?? 5))
     });
     setActiveLayoutId(id);
     setStatus(`Loaded layout "${layout.name}".`);
@@ -643,6 +849,46 @@ export default function PlannerPage() {
     setStatus(`Deleted layout "${target.name}".`);
   };
 
+  const applyPreset = (presetId: string) => {
+    const preset = islandPresets.find((entry) => entry.id === presetId);
+    if (!preset) return;
+    const confirmApply = window.confirm(`Apply preset "${preset.name}"? This replaces current terrain and objects.`);
+    if (!confirmApply) return;
+
+    commitHistory();
+    const nextTerrains = createTerrains(calibration.gridSize);
+    preset.terrainPatches.forEach((patch) => {
+      for (let yy = patch.y; yy < patch.y + patch.height; yy += 1) {
+        for (let xx = patch.x; xx < patch.x + patch.width; xx += 1) {
+          if (xx < 0 || yy < 0 || xx >= calibration.gridSize || yy >= calibration.gridSize) continue;
+          nextTerrains[tileIndex(xx, yy, calibration.gridSize)] = patch.terrain;
+        }
+      }
+    });
+
+    setTerrains(nextTerrains);
+    setObjects(
+      preset.objects.map((entry) => ({
+        instanceId: `${entry.objectId}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        objectId: entry.objectId,
+        x: entry.x,
+        y: entry.y,
+        orientation: entry.orientation ?? 'horizontal'
+      }))
+    );
+    setMarkers(
+      preset.markers.map((entry) => ({
+        id: `marker-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        label: entry.label,
+        color: entry.color,
+        x: entry.x,
+        y: entry.y
+      }))
+    );
+    setCategoryFilter('all');
+    setStatus(`Applied preset: ${preset.name}.`);
+  };
+
   const updateCalibration = (next: Partial<GridCalibration>) => {
     commitHistory();
     const current = calibration;
@@ -673,6 +919,7 @@ export default function PlannerPage() {
       if (!result) return;
       commitHistory();
       setReferenceLayer((current) => ({ ...current, imageDataUrl: result, visible: true }));
+      setLayerVisibility((current) => ({ ...current, image: true }));
       setSidebarTab('overlay');
       setStatus('Imported reference image. Adjust opacity and alignment to match your island map.');
     };
@@ -700,6 +947,32 @@ export default function PlannerPage() {
     setMarkers((current) => current.filter((entry) => entry.id !== selectedMarkerId));
     setStatus('Removed selected marker.');
     setSelectedMarkerId(null);
+  };
+
+  const moveSelectedMarker = (dx: number, dy: number) => {
+    if (!selectedMarkerId) return;
+    commitHistory();
+    setMarkers((current) =>
+      current.map((entry) =>
+        entry.id === selectedMarkerId
+          ? {
+              ...entry,
+              x: Math.max(0, Math.min(calibration.gridSize - 1, entry.x + dx)),
+              y: Math.max(0, Math.min(calibration.gridSize - 1, entry.y + dy))
+            }
+          : entry
+      )
+    );
+    setStatus('Moved selected marker.');
+  };
+
+  const focusSelection = () => {
+    if (!selectedObject && !selectedMarker) return;
+    const targetX = selectedObject?.x ?? selectedMarker?.x ?? 0;
+    const targetY = selectedObject?.y ?? selectedMarker?.y ?? 0;
+    const left = Math.max(0, targetX * calibration.tileSize - calibration.tileSize * 4);
+    const top = Math.max(0, targetY * calibration.tileSize - calibration.tileSize * 4);
+    viewportRef.current?.scrollTo({ left, top, behavior: 'smooth' });
   };
 
   const moveSelectedObject = (dx: number, dy: number) => {
@@ -810,6 +1083,71 @@ export default function PlannerPage() {
     dragReference.current.active = false;
   };
 
+  const exportPlannerJson = () => {
+    const payload: PlannerSnapshot = {
+      name: currentLayoutName,
+      terrains,
+      objects,
+      markers,
+      activeTool,
+      overlayMode,
+      layerVisibility,
+      categoryFilter,
+      calibration,
+      referenceLayer,
+      placementOrientation,
+      brushEnabled,
+      brushSize,
+      templateSize
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.download = 'island-planner.json';
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    URL.revokeObjectURL(link.href);
+    setStatus('Exported planner JSON.');
+  };
+
+  const importPlannerJson = (file: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result)) as PlannerSnapshot;
+        if (!Array.isArray(parsed.terrains) || !Array.isArray(parsed.objects)) {
+          setStatus('Invalid planner JSON: missing terrain/objects arrays.');
+          return;
+        }
+        const nextCalibration = { ...plannerGridDefaults, ...parsed.calibration };
+        const expectedTiles = nextCalibration.gridSize * nextCalibration.gridSize;
+        const terrainData =
+          parsed.terrains.length === expectedTiles
+            ? parsed.terrains
+            : resizeTerrains(parsed.terrains, Math.floor(Math.sqrt(parsed.terrains.length)), nextCalibration.gridSize);
+        applySnapshot({
+          terrains: terrainData,
+          objects: parsed.objects,
+          markers: parsed.markers ?? [],
+          activeTool: parsed.activeTool ?? { mode: 'terrain', terrain: 'grass' },
+          overlayMode: parsed.overlayMode ?? defaultOverlayMode,
+          layerVisibility: { ...defaultLayerVisibility, ...parsed.layerVisibility },
+          categoryFilter: parsed.categoryFilter ?? 'all',
+          calibration: nextCalibration,
+          referenceLayer: { ...plannerReferenceDefaults, ...parsed.referenceLayer },
+          placementOrientation: parsed.placementOrientation ?? 'horizontal',
+          brushEnabled: parsed.brushEnabled ?? true,
+          brushSize: Math.max(1, Math.min(3, parsed.brushSize ?? 1)),
+          templateSize: Math.max(2, Math.min(12, parsed.templateSize ?? 5))
+        });
+        setStatus('Imported planner JSON successfully.');
+      } catch {
+        setStatus('Could not import JSON. Please choose a valid planner export file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const exportPlannerImage = () => {
     const tileSize = calibration.tileSize;
     const gridSize = calibration.gridSize;
@@ -824,7 +1162,11 @@ export default function PlannerPage() {
     const drawContent = () => {
       for (let y = 0; y < gridSize; y += 1) {
         for (let x = 0; x < gridSize; x += 1) {
-          const terrain = terrains[tileIndex(x, y, gridSize)];
+          let terrain = terrains[tileIndex(x, y, gridSize)];
+          if (!layerVisibility.terrain) terrain = 'grass';
+          if (terrain === 'path' && !layerVisibility.paths) terrain = 'grass';
+          if (terrain === 'water' && !layerVisibility.water) terrain = 'grass';
+          if (terrain === 'cliff' && !layerVisibility.cliffs) terrain = 'grass';
           const color = terrain === 'grass' ? '#a9d78f' : terrain === 'water' ? '#7ac7f8' : terrain === 'cliff' ? '#8f7d68' : terrain === 'path' ? '#d5b089' : '#f1ddb2';
           ctx.fillStyle = color;
           ctx.globalAlpha = calibration.terrainOpacity;
@@ -833,7 +1175,7 @@ export default function PlannerPage() {
       }
       ctx.globalAlpha = 1;
 
-      if (exportOptions.includeGrid && calibration.showLines) {
+      if (exportOptions.includeGrid && calibration.showLines && layerVisibility.grid) {
         ctx.strokeStyle = calibration.highContrastLines ? 'rgba(15,23,42,0.65)' : 'rgba(255,255,255,0.45)';
         ctx.lineWidth = 1;
         for (let i = 0; i <= gridSize; i += 1) {
@@ -849,21 +1191,23 @@ export default function PlannerPage() {
         }
       }
 
-      objects.forEach((entry) => {
-        const config = objectConfigMap[entry.objectId];
-        if (!config) return;
-        const footprint = getObjectFootprint(entry.objectId, entry.orientation ?? 'horizontal');
-        ctx.fillStyle = config.color;
-        ctx.fillRect(entry.x * tileSize, entry.y * tileSize, footprint.width * tileSize, footprint.height * tileSize);
+      if (layerVisibility.buildings) {
+        filteredObjects.forEach((entry) => {
+          const config = objectConfigMap[entry.objectId];
+          if (!config) return;
+          const footprint = getObjectFootprint(entry.objectId, entry.orientation ?? 'horizontal');
+          ctx.fillStyle = config.color;
+          ctx.fillRect(entry.x * tileSize, entry.y * tileSize, footprint.width * tileSize, footprint.height * tileSize);
         ctx.strokeStyle = 'rgba(15,23,42,0.45)';
         ctx.strokeRect(entry.x * tileSize, entry.y * tileSize, footprint.width * tileSize, footprint.height * tileSize);
         ctx.fillStyle = '#0f172a';
         ctx.font = `bold ${Math.max(10, Math.floor(tileSize * 0.38))}px sans-serif`;
         ctx.fillText(config.label, entry.x * tileSize + 4, entry.y * tileSize + Math.max(12, tileSize / 1.5));
-      });
+        });
+      }
 
-      if (exportOptions.includeMarkers) {
-        markers.forEach((marker) => {
+      if (exportOptions.includeMarkers && layerVisibility.markers) {
+        filteredMarkers.forEach((marker) => {
           const cx = marker.x * tileSize;
           const cy = marker.y * tileSize;
           ctx.fillStyle = marker.color;
@@ -883,7 +1227,7 @@ export default function PlannerPage() {
       setStatus('Exported planner image as PNG.');
     };
 
-    if (exportOptions.includeImage && referenceLayer.imageDataUrl && referenceLayer.visible) {
+    if (exportOptions.includeImage && layerVisibility.image && referenceLayer.imageDataUrl && referenceLayer.visible) {
       const img = new Image();
       img.onload = () => {
         ctx.save();
@@ -905,10 +1249,12 @@ export default function PlannerPage() {
 
   const toggleOverlay = () => {
     setOverlayMode((current) => (current === 'image' ? 'full' : 'image'));
+    setLayerVisibility((current) => ({ ...current, image: !current.image }));
   };
 
   const toggleGridVisibility = () => {
     setCalibration((current) => ({ ...current, showLines: !current.showLines }));
+    setLayerVisibility((current) => ({ ...current, grid: !current.grid }));
   };
 
   const mobileTabButtons = (
@@ -935,7 +1281,7 @@ export default function PlannerPage() {
         label="Island Planner"
         tint="#c7f2d4"
         title="Design Your Island Layout"
-        subtitle="Phase 3 planner with overlay alignment, terrain tools, building footprints, markers, saved concepts, and export."
+        subtitle="Phase 4 planner with layers, templates, presets, JSON import/export, alignment guides, and faster editing workflows."
       />
 
       <PlannerTopbar
@@ -1023,6 +1369,15 @@ export default function PlannerPage() {
               />
             )}
 
+            {sidebarTab === 'layers' && (
+              <LayerPanel
+                layers={layerVisibility}
+                onToggle={toggleLayer}
+                terrainOpacity={calibration.terrainOpacity}
+                onTerrainOpacity={(value) => setCalibration((current) => ({ ...current, terrainOpacity: value }))}
+              />
+            )}
+
             {sidebarTab === 'grid' && (
               <GridCalibrationPanel
                 settings={calibration}
@@ -1030,6 +1385,19 @@ export default function PlannerPage() {
                 onSnapImageCenter={() => setReferenceLayer((current) => ({ ...current, offsetX: 0, offsetY: 0 }))}
                 onSnapGridCenter={() => setCalibration((current) => ({ ...current, offsetX: 0, offsetY: 0 }))}
               />
+            )}
+
+            {sidebarTab === 'templates' && (
+              <TemplateToolPanel
+                activeTemplateId={activeTool.mode === 'template' ? activeTool.templateId : null}
+                templateSize={templateSize}
+                onSelectTemplate={(templateId) => setActiveTool({ mode: 'template', templateId })}
+                onTemplateSize={setTemplateSize}
+              />
+            )}
+
+            {sidebarTab === 'presets' && (
+              <PresetStarterPanel onApplyPreset={applyPreset} />
             )}
 
             {sidebarTab === 'markers' && (
@@ -1054,43 +1422,63 @@ export default function PlannerPage() {
             )}
 
             {sidebarTab === 'export' && (
-              <ExportPanel
-                includeImage={exportOptions.includeImage}
-                includeGrid={exportOptions.includeGrid}
-                includeMarkers={exportOptions.includeMarkers}
-                onChange={(next) => setExportOptions((current) => ({ ...current, ...next }))}
-                onExport={exportPlannerImage}
-              />
+              <>
+                <ExportPanel
+                  includeImage={exportOptions.includeImage}
+                  includeGrid={exportOptions.includeGrid}
+                  includeMarkers={exportOptions.includeMarkers}
+                  onChange={(next) => setExportOptions((current) => ({ ...current, ...next }))}
+                  onExport={exportPlannerImage}
+                />
+                <LayoutImportExportPanel onExportJson={exportPlannerJson} onImportJson={importPlannerJson} />
+              </>
+            )}
+
+            {sidebarTab === 'help' && (
+              <PlannerHelpPanel visible={showHelpPanel} onDismiss={() => setShowHelpPanel(false)} />
             )}
 
             <SelectedObjectInspector
               selected={selectedObject}
+              selectedMarker={selectedMarker}
               onMove={moveSelectedObject}
               onDelete={deleteSelectedObject}
               onDuplicate={duplicateSelectedObject}
               onRotate={rotateSelectedObject}
+              onFocus={focusSelection}
+              onMoveMarker={moveSelectedMarker}
+              onDeleteMarker={deleteSelectedMarker}
             />
           </div>
         </aside>
 
         <section className="space-y-3">
+          <PlannerHelpPanel visible={showHelpPanel} onDismiss={() => setShowHelpPanel(false)} />
+
           <div className="rounded-2xl border border-white/50 bg-white/70 p-3 shadow-float dark:border-slate-700 dark:bg-slate-900/70">
             <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{status}</p>
             <p className="text-xs text-slate-600 dark:text-slate-300">
-              Active tool: {activeTool.mode === 'terrain' ? `Terrain (${activeTool.terrain})` : activeTool.mode === 'place' ? `Place (${objectConfigMap[activeTool.objectId]?.name ?? activeTool.objectId})` : activeTool.mode}
+              Active tool: {activeTool.mode === 'terrain'
+                ? `Terrain (${activeTool.terrain})`
+                : activeTool.mode === 'place'
+                  ? `Place (${objectConfigMap[activeTool.objectId]?.name ?? activeTool.objectId})`
+                  : activeTool.mode === 'template'
+                    ? `Template (${templateTools.find((entry) => entry.id === activeTool.templateId)?.name ?? activeTool.templateId})`
+                    : activeTool.mode}
               {' '}| Grid: {calibration.gridSize}x{calibration.gridSize} | Tile: {calibration.tileSize}px
             </p>
           </div>
 
           <PlannerGrid
             terrains={terrains}
-            objects={objects}
-            markers={markers}
+            objects={filteredObjects}
+            markers={filteredMarkers}
             calibration={calibration}
             overlayMode={overlayMode}
             referenceLayer={referenceLayer}
             selectedObjectId={selectedObjectId}
             selectedMarkerId={selectedMarkerId}
+            layerVisibility={layerVisibility}
             ghost={ghostPreview}
             onTileClick={handleTileClick}
             onTileHover={(x, y) => setHoverTile({ x, y })}
@@ -1109,14 +1497,33 @@ export default function PlannerPage() {
             onReferencePointerDown={onReferencePointerDown}
             onReferencePointerMove={onReferencePointerMove}
             onReferencePointerUp={onReferencePointerUp}
+            onCanvasClickAway={() => {
+              setSelectedObjectId(null);
+              setSelectedMarkerId(null);
+            }}
             viewportRef={viewportRef}
           />
 
-          <PlannerLegend objects={objects} />
+          <PlannerLegend
+            objects={objects}
+            markers={markers}
+            categoryFilter={categoryFilter}
+            onCategoryFilter={setCategoryFilter}
+          />
         </section>
       </div>
 
       {mobileTabButtons}
+      <QuickActionsBar
+        onTerrain={() => setActiveTool({ mode: 'terrain', terrain: 'path' })}
+        onPlace={() => setActiveTool({ mode: 'place', objectId: 'player-house' })}
+        onSelect={() => setActiveTool({ mode: 'select' })}
+        onFit={fitCanvasToScreen}
+        onDeselect={() => {
+          setSelectedObjectId(null);
+          setSelectedMarkerId(null);
+        }}
+      />
 
       {mobileSidebarOpen ? (
         <div className="fixed inset-0 z-50 bg-slate-900/40 p-3 lg:hidden" onClick={() => setMobileSidebarOpen(false)}>
@@ -1179,6 +1586,15 @@ export default function PlannerPage() {
                 />
               )}
 
+              {sidebarTab === 'layers' && (
+                <LayerPanel
+                  layers={layerVisibility}
+                  onToggle={toggleLayer}
+                  terrainOpacity={calibration.terrainOpacity}
+                  onTerrainOpacity={(value) => setCalibration((current) => ({ ...current, terrainOpacity: value }))}
+                />
+              )}
+
               {sidebarTab === 'grid' && (
                 <GridCalibrationPanel
                   settings={calibration}
@@ -1186,6 +1602,19 @@ export default function PlannerPage() {
                   onSnapImageCenter={() => setReferenceLayer((current) => ({ ...current, offsetX: 0, offsetY: 0 }))}
                   onSnapGridCenter={() => setCalibration((current) => ({ ...current, offsetX: 0, offsetY: 0 }))}
                 />
+              )}
+
+              {sidebarTab === 'templates' && (
+                <TemplateToolPanel
+                  activeTemplateId={activeTool.mode === 'template' ? activeTool.templateId : null}
+                  templateSize={templateSize}
+                  onSelectTemplate={(templateId) => setActiveTool({ mode: 'template', templateId })}
+                  onTemplateSize={setTemplateSize}
+                />
+              )}
+
+              {sidebarTab === 'presets' && (
+                <PresetStarterPanel onApplyPreset={applyPreset} />
               )}
 
               {sidebarTab === 'markers' && (
@@ -1210,21 +1639,32 @@ export default function PlannerPage() {
               )}
 
               {sidebarTab === 'export' && (
-                <ExportPanel
-                  includeImage={exportOptions.includeImage}
-                  includeGrid={exportOptions.includeGrid}
-                  includeMarkers={exportOptions.includeMarkers}
-                  onChange={(next) => setExportOptions((current) => ({ ...current, ...next }))}
-                  onExport={exportPlannerImage}
-                />
+                <>
+                  <ExportPanel
+                    includeImage={exportOptions.includeImage}
+                    includeGrid={exportOptions.includeGrid}
+                    includeMarkers={exportOptions.includeMarkers}
+                    onChange={(next) => setExportOptions((current) => ({ ...current, ...next }))}
+                    onExport={exportPlannerImage}
+                  />
+                  <LayoutImportExportPanel onExportJson={exportPlannerJson} onImportJson={importPlannerJson} />
+                </>
+              )}
+
+              {sidebarTab === 'help' && (
+                <PlannerHelpPanel visible={showHelpPanel} onDismiss={() => setShowHelpPanel(false)} />
               )}
 
               <SelectedObjectInspector
                 selected={selectedObject}
+                selectedMarker={selectedMarker}
                 onMove={moveSelectedObject}
                 onDelete={deleteSelectedObject}
                 onDuplicate={duplicateSelectedObject}
                 onRotate={rotateSelectedObject}
+                onFocus={focusSelection}
+                onMoveMarker={moveSelectedMarker}
+                onDeleteMarker={deleteSelectedMarker}
               />
             </div>
           </div>
