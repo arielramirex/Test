@@ -25,28 +25,32 @@ function ToolButton({
 
 export function PlannerToolbar({
   activeTool,
-  zoom,
-  showGrid,
+  brushEnabled,
+  orientation,
   onSelectTerrain,
   onSelectObject,
   onSelectErase,
   onSelectMove,
+  onToggleBrush,
+  onRotatePlacement,
+  onDuplicateSelected,
   onUndo,
   onReset,
-  onZoom,
-  onToggleGrid
+  selectedObjectExists
 }: {
   activeTool: PlannerTool;
-  zoom: number;
-  showGrid: boolean;
+  brushEnabled: boolean;
+  orientation: 'horizontal' | 'vertical';
   onSelectTerrain: (terrain: TerrainType) => void;
   onSelectObject: (objectId: string) => void;
   onSelectErase: () => void;
   onSelectMove: () => void;
+  onToggleBrush: () => void;
+  onRotatePlacement: () => void;
+  onDuplicateSelected: () => void;
   onUndo: () => void;
   onReset: () => void;
-  onZoom: (value: number) => void;
-  onToggleGrid: () => void;
+  selectedObjectExists: boolean;
 }) {
   return (
     <aside className="space-y-4 rounded-island bg-white/85 p-4 shadow-float dark:bg-slate-900/75">
@@ -64,6 +68,9 @@ export function PlannerToolbar({
             </ToolButton>
           ))}
         </div>
+        <div className="mt-2">
+          <ToolButton active={brushEnabled} onClick={onToggleBrush}>{brushEnabled ? 'Brush: On' : 'Brush: Off'}</ToolButton>
+        </div>
       </section>
 
       <section>
@@ -72,6 +79,10 @@ export function PlannerToolbar({
           activeObjectId={activeTool.mode === 'place' ? activeTool.objectId : null}
           onSelectObject={onSelectObject}
         />
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <ToolButton active={false} onClick={onRotatePlacement}>Rotate: {orientation}</ToolButton>
+          <ToolButton active={false} onClick={onDuplicateSelected}>Duplicate</ToolButton>
+        </div>
       </section>
 
       <section>
@@ -82,25 +93,7 @@ export function PlannerToolbar({
           <ToolButton active={false} onClick={onUndo}>Undo</ToolButton>
           <ToolButton active={false} onClick={onReset}>Clear All</ToolButton>
         </div>
-      </section>
-
-      <section>
-        <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-slate-600 dark:text-slate-300">View</h3>
-        <div className="grid gap-2">
-          <label className="rounded-xl bg-slate-100 px-3 py-2 text-sm dark:bg-slate-800">
-            Zoom: {zoom}px
-            <input
-              type="range"
-              min={16}
-              max={40}
-              step={2}
-              value={zoom}
-              onChange={(event) => onZoom(Number(event.target.value))}
-              className="mt-1 w-full"
-            />
-          </label>
-          <ToolButton active={showGrid} onClick={onToggleGrid}>{showGrid ? 'Hide Grid Lines' : 'Show Grid Lines'}</ToolButton>
-        </div>
+        {!selectedObjectExists ? <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">Select an object to duplicate.</p> : null}
       </section>
     </aside>
   );

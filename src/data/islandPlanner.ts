@@ -14,6 +14,7 @@ export type PlaceableObjectConfig = {
   type: 'building' | 'structure';
   color: string;
   label: string;
+  rotatable?: boolean;
 };
 
 export type PlannerObjectInstance = {
@@ -21,6 +22,7 @@ export type PlannerObjectInstance = {
   objectId: string;
   x: number;
   y: number;
+  orientation?: 'horizontal' | 'vertical';
 };
 
 export type PlannerSnapshot = {
@@ -36,6 +38,27 @@ export type PlannerReferenceLayer = {
   offsetX: number;
   offsetY: number;
   locked: boolean;
+  rotation: number;
+};
+
+export type OverlayMode = 'image' | 'grid' | 'image-grid' | 'full';
+
+export type GridCalibration = {
+  gridSize: number;
+  tileSize: number;
+  offsetX: number;
+  offsetY: number;
+  showLines: boolean;
+  highContrastLines: boolean;
+  terrainOpacity: number;
+};
+
+export type PlannerMarker = {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  color: string;
 };
 
 export const PLANNER_GRID_SIZE = 28;
@@ -47,8 +70,32 @@ export const plannerReferenceDefaults: PlannerReferenceLayer = {
   scale: 1,
   offsetX: 0,
   offsetY: 0,
-  locked: true
+  locked: true,
+  rotation: 0
 };
+
+export const plannerGridDefaults: GridCalibration = {
+  gridSize: 28,
+  tileSize: 22,
+  offsetX: 0,
+  offsetY: 0,
+  showLines: true,
+  highContrastLines: false,
+  terrainOpacity: 1
+};
+
+export const defaultOverlayMode: OverlayMode = 'full';
+
+export const markerTemplates: Omit<PlannerMarker, 'id' | 'x' | 'y'>[] = [
+  { label: 'Resident Services', color: '#f7b7c7' },
+  { label: 'Airport', color: '#9dd6ff' },
+  { label: 'Pier', color: '#f2d1a0' },
+  { label: 'River Mouth', color: '#8ecbff' },
+  { label: 'Secret Beach', color: '#f7e3b5' },
+  { label: 'Villager House', color: '#f7c39f' },
+  { label: 'Museum', color: '#a9c8f0' },
+  { label: 'Campsite', color: '#bce5a4' }
+];
 
 export const terrainPalette: { key: TerrainType; label: string; color: string }[] = [
   { key: 'grass', label: 'Grass', color: '#a9d78f' },
@@ -73,8 +120,15 @@ export const placeableObjects: PlaceableObjectConfig[] = [
   { id: 'able-sisters', name: 'Able Sisters', width: 5, height: 4, type: 'building', color: '#d9ccff', label: 'Able' },
   { id: 'museum', name: 'Museum', width: 7, height: 4, type: 'building', color: '#9fc5e8', label: 'Museum' },
   { id: 'campsite', name: 'Campsite', width: 4, height: 4, type: 'building', color: '#bde4a8', label: 'Camp' },
-  { id: 'bridge', name: 'Bridge', width: 4, height: 2, type: 'structure', color: '#f7d7a8', label: 'Bridge' },
-  { id: 'incline', name: 'Incline', width: 2, height: 4, type: 'structure', color: '#d6c3a5', label: 'Incline' }
+  { id: 'bridge', name: 'Bridge', width: 4, height: 2, type: 'structure', color: '#f7d7a8', label: 'Bridge', rotatable: true },
+  { id: 'incline', name: 'Incline', width: 2, height: 4, type: 'structure', color: '#d6c3a5', label: 'Incline', rotatable: true }
 ];
 
 export const objectConfigMap = Object.fromEntries(placeableObjects.map((item) => [item.id, item])) as Record<string, PlaceableObjectConfig>;
+
+export function getObjectFootprint(objectId: string, orientation: 'horizontal' | 'vertical' = 'horizontal') {
+  const config = objectConfigMap[objectId];
+  if (!config) return { width: 1, height: 1 };
+  if (!config.rotatable || orientation === 'horizontal') return { width: config.width, height: config.height };
+  return { width: config.height, height: config.width };
+}

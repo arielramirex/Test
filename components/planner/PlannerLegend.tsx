@@ -1,10 +1,18 @@
 import type { PlannerObjectInstance } from '@/src/data/islandPlanner';
-import { objectConfigMap } from '@/src/data/islandPlanner';
+import { objectConfigMap, terrainPalette } from '@/src/data/islandPlanner';
 
 export function PlannerLegend({ objects }: { objects: PlannerObjectInstance[] }) {
   return (
     <div className="rounded-2xl bg-white/70 p-3 text-sm shadow-float dark:bg-slate-900/70">
       <h3 className="mb-2 font-extrabold">Planner Legend</h3>
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {terrainPalette.map((terrain) => (
+          <div key={terrain.key} className="flex items-center gap-2 rounded-xl bg-slate-50 p-2 dark:bg-slate-800">
+            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: terrain.color }} />
+            <span className="text-xs font-bold">{terrain.label}</span>
+          </div>
+        ))}
+      </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {objects.length ? (
           objects.map((entry) => {

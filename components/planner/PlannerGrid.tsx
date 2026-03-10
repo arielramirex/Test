@@ -1,100 +1,172 @@
-import type { PlannerObjectInstance } from '@/src/data/islandPlanner';
-import { objectConfigMap, type TerrainType } from '@/src/data/islandPlanner';
-import type { PlannerReferenceLayer } from '@/src/data/islandPlanner';
+import type {
+  GridCalibration,
+  OverlayMode,
+  PlannerMarker,
+  PlannerObjectInstance,
+  PlannerReferenceLayer,
+  TerrainType
+} from '@/src/data/islandPlanner';
 import { PlannerTile } from './PlannerTile';
+import { MarkerLayer, ObjectLayer } from './MarkerLayer';
+import { ObjectGhostPreview } from './ObjectGhostPreview';
 
 export function PlannerGrid({
-  gridSize,
   terrains,
   objects,
-  zoom,
-  showGrid,
+  markers,
+  calibration,
+  overlayMode,
   referenceLayer,
   selectedObjectId,
-  onTileClick
+  selectedMarkerId,
+  ghost,
+  onTileClick,
+  onTileHover,
+  onPaintStart,
+  onPaintDrag,
+  onPaintEnd,
+  onObjectSelect,
+  onMarkerSelect,
+  onMarkerPointerDown,
+  onReferencePointerDown,
+  onReferencePointerMove,
+  onReferencePointerUp
 }: {
-  gridSize: number;
   terrains: TerrainType[];
   objects: PlannerObjectInstance[];
-  zoom: number;
-  showGrid: boolean;
+  markers: PlannerMarker[];
+  calibration: GridCalibration;
+  overlayMode: OverlayMode;
   referenceLayer: PlannerReferenceLayer;
   selectedObjectId: string | null;
+  selectedMarkerId: string | null;
+  ghost: { x: number | null; y: number | null; objectId: string | null; orientation: 'horizontal' | 'vertical'; valid: boolean };
   onTileClick: (x: number, y: number) => void;
+  onTileHover: (x: number, y: number) => void;
+  onPaintStart: (x: number, y: number) => void;
+  onPaintDrag: (x: number, y: number) => void;
+  onPaintEnd: () => void;
+  onObjectSelect: (instanceId: string) => void;
+  onMarkerSelect: (id: string) => void;
+  onMarkerPointerDown: (id: string, clientX: number, clientY: number) => void;
+  onReferencePointerDown: (clientX: number, clientY: number) => void;
+  onReferencePointerMove: (clientX: number, clientY: number) => void;
+  onReferencePointerUp: () => void;
 }) {
+  const gridSize = calibration.gridSize;
+  const tileSize = calibration.tileSize;
+  const width = gridSize * tileSize;
+  const height = gridSize * tileSize;
+
+  const showImage = overlayMode === 'image' || overlayMode === 'image-grid' || overlayMode === 'full';
+  const showGrid = overlayMode !== 'image';
+  const showObjects = overlayMode === 'full';
+
   return (
     <div className="overflow-auto rounded-2xl border border-white/40 bg-white/70 p-2 shadow-float dark:border-slate-700 dark:bg-slate-900/60">
       <div
         className="relative"
-        style={{
-          width: gridSize * zoom,
-          height: gridSize * zoom
-        }}
+        style={{ width: width + Math.abs(calibration.offsetX) + 8, height: height + Math.abs(calibration.offsetY) + 8 }}
       >
-        {referenceLayer.imageDataUrl && referenceLayer.visible ? (
+        {showImage && referenceLayer.imageDataUrl && referenceLayer.visible ? (
           <div
-            className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-md"
+            className={`absolute inset-0 z-0 overflow-hidden rounded-md ${referenceLayer.locked ? 'pointer-events-none' : 'pointer-events-auto'}`}
             style={{ opacity: referenceLayer.opacity }}
+            onPointerDown={(event) => {
+              if (referenceLayer.locked) return;
+              event.preventDefault();
+              onReferencePointerDown(event.clientX, event.clientY);
+            }}
+            onPointerMove={(event) => {
+              if (referenceLayer.locked) return;
+              onReferencePointerMove(event.clientX, event.clientY);
+            }}
+            onPointerUp={onReferencePointerUp}
+            onPointerLeave={onReferencePointerUp}
           >
             <img
               src={referenceLayer.imageDataUrl}
               alt="Imported island reference"
               className="h-full w-full object-cover"
               style={{
-                transformOrigin: 'top left',
-                transform: `translate(${referenceLayer.offsetX}px, ${referenceLayer.offsetY}px) scale(${referenceLayer.scale})`
+                transformOrigin: 'center center',
+                transform: `translate(${referenceLayer.offsetX}px, ${referenceLayer.offsetY}px) scale(${referenceLayer.scale}) rotate(${referenceLayer.rotation}deg)`
               }}
             />
           </div>
         ) : null}
 
         <div
-          className="relative z-10 grid"
-          style={{
-            gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-            width: gridSize * zoom,
-            height: gridSize * zoom
-          }}
+          className="absolute z-10"
+          style={{ left: calibration.offsetX, top: calibration.offsetY, width, height, opacity: calibration.terrainOpacity }}
+          onPointerUp={onPaintEnd}
+          onPointerLeave={onPaintEnd}
         >
-          {terrains.map((terrain, index) => {
-            const x = index % gridSize;
-            const y = Math.floor(index / gridSize);
-            return (
-              <PlannerTile
-                key={`${x}-${y}`}
-                x={x}
-                y={y}
-                terrain={terrain}
-                zoom={zoom}
-                showGrid={showGrid}
-                onClick={onTileClick}
-              />
-            );
-          })}
-        </div>
-
-        {objects.map((entry) => {
-          const config = objectConfigMap[entry.objectId];
-          if (!config) return null;
-          const selected = selectedObjectId === entry.instanceId;
-          return (
+          {showGrid ? (
             <div
-              key={entry.instanceId}
-              className="pointer-events-none absolute flex items-center justify-center rounded-md text-[10px] font-extrabold uppercase tracking-wide text-slate-900"
+              className="grid"
               style={{
-                left: entry.x * zoom,
-                top: entry.y * zoom,
-                width: config.width * zoom,
-                height: config.height * zoom,
-                backgroundColor: config.color,
-                border: selected ? '2px solid #0f766e' : '1px solid rgba(15,23,42,0.3)',
-                boxShadow: selected ? '0 0 0 2px rgba(240,253,250,0.9)' : 'none'
+                gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+                width,
+                height
               }}
             >
-              <span className="rounded bg-white/75 px-1.5 py-0.5">{config.label}</span>
+              {terrains.map((terrain, index) => {
+                const x = index % gridSize;
+                const y = Math.floor(index / gridSize);
+                return (
+                  <div
+                    key={`${x}-${y}`}
+                    onPointerEnter={() => {
+                      onTileHover(x, y);
+                      onPaintDrag(x, y);
+                    }}
+                    onMouseEnter={() => onTileHover(x, y)}
+                  >
+                    <PlannerTile
+                      x={x}
+                      y={y}
+                      terrain={terrain}
+                      zoom={tileSize}
+                      showGrid={calibration.showLines}
+                      onClick={onTileClick}
+                      onPointerDown={onPaintStart}
+                      gridBorderColor={calibration.highContrastLines ? 'rgba(15,23,42,0.5)' : 'rgba(255,255,255,0.45)'}
+                    />
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          ) : null}
+
+          <ObjectGhostPreview
+            objectId={ghost.objectId}
+            orientation={ghost.orientation}
+            tileSize={tileSize}
+            x={ghost.x}
+            y={ghost.y}
+            valid={ghost.valid}
+            visible={showObjects}
+          />
+
+          <ObjectLayer
+            objects={objects}
+            tileSize={tileSize}
+            selectedObjectId={selectedObjectId}
+            visible={showObjects}
+            onObjectSelect={onObjectSelect}
+          />
+
+          <MarkerLayer
+            markers={markers}
+            tileSize={tileSize}
+            gridSize={gridSize}
+            visible={showObjects}
+            selectedMarkerId={selectedMarkerId}
+            onSelectMarker={onMarkerSelect}
+            onMarkerPointerDown={onMarkerPointerDown}
+          />
+        </div>
       </div>
     </div>
   );

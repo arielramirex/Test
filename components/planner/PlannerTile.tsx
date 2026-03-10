@@ -6,7 +6,9 @@ export function PlannerTile({
   terrain,
   zoom,
   showGrid,
-  onClick
+  onClick,
+  onPointerDown,
+  gridBorderColor
 }: {
   x: number;
   y: number;
@@ -14,17 +16,20 @@ export function PlannerTile({
   zoom: number;
   showGrid: boolean;
   onClick: (x: number, y: number) => void;
+  onPointerDown?: (x: number, y: number) => void;
+  gridBorderColor?: string;
 }) {
   return (
     <button
       type="button"
       onClick={() => onClick(x, y)}
+      onPointerDown={() => onPointerDown?.(x, y)}
       className="touch-manipulation"
       style={{
         width: zoom,
         height: zoom,
         backgroundColor: terrainColorMap[terrain],
-        border: showGrid ? '1px solid rgba(255,255,255,0.45)' : 'none'
+        border: showGrid ? `1px solid ${gridBorderColor ?? 'rgba(255,255,255,0.45)'}` : 'none'
       }}
       aria-label={`Tile ${x},${y}`}
     />
