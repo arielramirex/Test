@@ -1,5 +1,7 @@
 import type { PlannerTool, TerrainType } from '@/src/data/islandPlanner';
-import { placeableObjects, terrainPalette } from '@/src/data/islandPlanner';
+import { terrainPalette } from '@/src/data/islandPlanner';
+import { PlaceableObjectPalette } from './PlaceableObjectPalette';
+import type { ReactNode } from 'react';
 
 function ToolButton({
   active,
@@ -8,7 +10,7 @@ function ToolButton({
 }: {
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
@@ -66,14 +68,10 @@ export function PlannerToolbar({
 
       <section>
         <h3 className="mb-2 text-sm font-extrabold uppercase tracking-wide text-slate-600 dark:text-slate-300">Place Buildings</h3>
-        <div className="grid gap-2">
-          {placeableObjects.map((item) => (
-            <ToolButton key={item.id} active={activeTool.mode === 'place' && activeTool.objectId === item.id} onClick={() => onSelectObject(item.id)}>
-              <span className="mr-2 inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: item.color }} />
-              {item.name} ({item.width}x{item.height})
-            </ToolButton>
-          ))}
-        </div>
+        <PlaceableObjectPalette
+          activeObjectId={activeTool.mode === 'place' ? activeTool.objectId : null}
+          onSelectObject={onSelectObject}
+        />
       </section>
 
       <section>

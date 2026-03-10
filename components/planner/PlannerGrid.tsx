@@ -1,5 +1,6 @@
 import type { PlannerObjectInstance } from '@/src/data/islandPlanner';
-import { objectConfigMap, terrainColorMap, type TerrainType } from '@/src/data/islandPlanner';
+import { objectConfigMap, type TerrainType } from '@/src/data/islandPlanner';
+import { PlannerTile } from './PlannerTile';
 
 export function PlannerGrid({
   gridSize,
@@ -39,18 +40,14 @@ export function PlannerGrid({
             const x = index % gridSize;
             const y = Math.floor(index / gridSize);
             return (
-              <button
+              <PlannerTile
                 key={`${x}-${y}`}
-                type="button"
-                onClick={() => onTileClick(x, y)}
-                className="touch-manipulation"
-                style={{
-                  width: zoom,
-                  height: zoom,
-                  backgroundColor: terrainColorMap[terrain],
-                  border: showGrid ? '1px solid rgba(255,255,255,0.45)' : 'none'
-                }}
-                aria-label={`Tile ${x},${y}`}
+                x={x}
+                y={y}
+                terrain={terrain}
+                zoom={zoom}
+                showGrid={showGrid}
+                onClick={onTileClick}
               />
             );
           })}
