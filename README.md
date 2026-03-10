@@ -28,6 +28,7 @@ npm run build
 ```
 
 With `output: "export"`, `npm run build` generates the static site in `out/`.
+This project is static-export-only.
 
 ## GitHub Pages Notes
 This repo is configured for a GitHub Pages repo named `Test`:
@@ -44,10 +45,10 @@ Workflow file: `.github/workflows/deploy.yml`
 
 On push to `main`, GitHub Actions:
 1. Uses Node 20
-2. Installs dependencies (`npm ci` when lockfile exists, otherwise `npm install`)
+2. Installs dependencies (`npm install`)
 3. Runs `npm run build`
 4. Uploads `out/`
-5. Deploys to GitHub Pages using official Pages actions
+5. Deploys to GitHub Pages using GitHub Actions + GitHub Pages official actions
 
 ## Project Structure
 ```text
