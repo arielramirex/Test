@@ -1,5 +1,6 @@
 import type { PlannerObjectInstance } from '@/src/data/islandPlanner';
 import { objectConfigMap, type TerrainType } from '@/src/data/islandPlanner';
+import type { PlannerReferenceLayer } from '@/src/data/islandPlanner';
 import { PlannerTile } from './PlannerTile';
 
 export function PlannerGrid({
@@ -8,6 +9,7 @@ export function PlannerGrid({
   objects,
   zoom,
   showGrid,
+  referenceLayer,
   selectedObjectId,
   onTileClick
 }: {
@@ -16,6 +18,7 @@ export function PlannerGrid({
   objects: PlannerObjectInstance[];
   zoom: number;
   showGrid: boolean;
+  referenceLayer: PlannerReferenceLayer;
   selectedObjectId: string | null;
   onTileClick: (x: number, y: number) => void;
 }) {
@@ -28,8 +31,25 @@ export function PlannerGrid({
           height: gridSize * zoom
         }}
       >
+        {referenceLayer.imageDataUrl && referenceLayer.visible ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-md"
+            style={{ opacity: referenceLayer.opacity }}
+          >
+            <img
+              src={referenceLayer.imageDataUrl}
+              alt="Imported island reference"
+              className="h-full w-full object-cover"
+              style={{
+                transformOrigin: 'top left',
+                transform: `translate(${referenceLayer.offsetX}px, ${referenceLayer.offsetY}px) scale(${referenceLayer.scale})`
+              }}
+            />
+          </div>
+        ) : null}
+
         <div
-          className="grid"
+          className="relative z-10 grid"
           style={{
             gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
             width: gridSize * zoom,

@@ -3,14 +3,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PlannerGrid } from '@/components/planner/PlannerGrid';
 import { PlannerLegend } from '@/components/planner/PlannerLegend';
+import { PlannerReferenceControls } from '@/components/planner/PlannerReferenceControls';
 import { PlannerToolbar } from '@/components/planner/PlannerToolbar';
 import { SectionHero } from '@/components/ui/SectionHero';
 import {
   objectConfigMap,
   PLANNER_GRID_SIZE,
   PLANNER_STORAGE_KEY,
+  plannerReferenceDefaults,
   placeableObjects,
   type PlannerObjectInstance,
+  type PlannerReferenceLayer,
   type PlannerSnapshot,
   type PlannerTool,
   type TerrainType
@@ -59,6 +62,7 @@ export default function PlannerPage() {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(22);
   const [showGrid, setShowGrid] = useState(true);
+  const [referenceLayer, setReferenceLayer] = useState<PlannerReferenceLayer>(plannerReferenceDefaults);
   const [history, setHistory] = useState<PlannerSnapshot[]>([]);
   const [status, setStatus] = useState('Tip: choose a tool and tap tiles to start planning.');
 
@@ -72,28 +76,46 @@ export default function PlannerPage() {
         objects?: PlannerObjectInstance[];
         zoom?: number;
         showGrid?: boolean;
+        referenceLayer?: PlannerReferenceLayer;
       };
 
       if (parsed.terrains?.length === initialTerrains.length) setTerrains(parsed.terrains);
       if (Array.isArray(parsed.objects)) setObjects(parsed.objects);
       if (typeof parsed.zoom === 'number') setZoom(parsed.zoom);
       if (typeof parsed.showGrid === 'boolean') setShowGrid(parsed.showGrid);
+      if (parsed.referenceLayer) {
+        setReferenceLayer({ ...plannerReferenceDefaults, ...parsed.referenceLayer });
+      }
     } catch {
       localStorage.removeItem(PLANNER_STORAGE_KEY);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      PLANNER_STORAGE_KEY,
-      JSON.stringify({
-        terrains,
-        objects,
-        zoom,
-        showGrid
-      })
-    );
-  }, [objects, showGrid, terrains, zoom]);
+    const payload = {
+      terrains,
+      objects,
+      zoom,
+      showGrid,
+      referenceLayer
+    };
+
+    try {
+      localStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      const fallbackPayload = {
+        ...payload,
+        referenceLayer: {
+          ...referenceLayer,
+          imageDataUrl: null
+        }
+      };
+      localStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(fallbackPayload));
+      if (referenceLayer.imageDataUrl) {
+        setStatus('Saved planner edits, but the image is too large for localStorage. You may need to re-upload it later.');
+      }
+    }
+  }, [objects, referenceLayer, showGrid, terrains, zoom]);
 
   const pushHistory = () => {
     setHistory((current) => [...current.slice(-39), { terrains: [...terrains], objects: [...objects] }]);
@@ -119,6 +141,30 @@ export default function PlannerPage() {
       setStatus('Undid last action.');
       return current.slice(0, -1);
     });
+  };
+
+  const handleImageUpload = (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setStatus('Please upload a PNG or JPG image file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : null;
+      if (!dataUrl) {
+        setStatus('Unable to read image file.');
+        return;
+      }
+      setReferenceLayer((current) => ({
+        ...current,
+        imageDataUrl: dataUrl,
+        visible: true
+      }));
+      setStatus('Island map imported as planner reference.');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleTileClick = (x: number, y: number) => {
@@ -221,28 +267,50 @@ export default function PlannerPage() {
       />
 
       <section className="grid gap-4 lg:grid-cols-[300px_1fr]">
-        <PlannerToolbar
-          activeTool={activeTool}
-          zoom={zoom}
-          showGrid={showGrid}
-          onSelectTerrain={(terrain) => {
-            setActiveTool({ mode: 'terrain', terrain });
-            setSelectedObjectId(null);
-          }}
-          onSelectObject={(objectId) => {
-            setActiveTool({ mode: 'place', objectId });
-            setSelectedObjectId(null);
-          }}
-          onSelectErase={() => {
-            setActiveTool({ mode: 'erase' });
-            setSelectedObjectId(null);
-          }}
-          onSelectMove={() => setActiveTool({ mode: 'select' })}
-          onUndo={undo}
-          onReset={resetPlanner}
-          onZoom={setZoom}
-          onToggleGrid={() => setShowGrid((current) => !current)}
-        />
+        <div className="space-y-4">
+          <PlannerToolbar
+            activeTool={activeTool}
+            zoom={zoom}
+            showGrid={showGrid}
+            onSelectTerrain={(terrain) => {
+              setActiveTool({ mode: 'terrain', terrain });
+              setSelectedObjectId(null);
+            }}
+            onSelectObject={(objectId) => {
+              setActiveTool({ mode: 'place', objectId });
+              setSelectedObjectId(null);
+            }}
+            onSelectErase={() => {
+              setActiveTool({ mode: 'erase' });
+              setSelectedObjectId(null);
+            }}
+            onSelectMove={() => setActiveTool({ mode: 'select' })}
+            onUndo={undo}
+            onReset={resetPlanner}
+            onZoom={setZoom}
+            onToggleGrid={() => setShowGrid((current) => !current)}
+          />
+
+          <PlannerReferenceControls
+            reference={referenceLayer}
+            onUpload={handleImageUpload}
+            onChange={(next) => setReferenceLayer((current) => ({ ...current, ...next }))}
+            onResetAlignment={() =>
+              setReferenceLayer((current) => ({
+                ...current,
+                offsetX: 0,
+                offsetY: 0,
+                scale: 1
+              }))
+            }
+            onClearImage={() =>
+              setReferenceLayer((current) => ({
+                ...current,
+                imageDataUrl: null
+              }))
+            }
+          />
+        </div>
 
         <div className="space-y-3">
           <div className="rounded-2xl bg-white/80 p-3 text-sm shadow-float dark:bg-slate-900/70">
@@ -256,6 +324,7 @@ export default function PlannerPage() {
             objects={objects}
             zoom={zoom}
             showGrid={showGrid}
+            referenceLayer={referenceLayer}
             selectedObjectId={selectedObjectId}
             onTileClick={handleTileClick}
           />

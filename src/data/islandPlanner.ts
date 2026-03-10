@@ -28,8 +28,27 @@ export type PlannerSnapshot = {
   objects: PlannerObjectInstance[];
 };
 
+export type PlannerReferenceLayer = {
+  imageDataUrl: string | null;
+  visible: boolean;
+  opacity: number;
+  scale: number;
+  offsetX: number;
+  offsetY: number;
+  locked: boolean;
+};
+
 export const PLANNER_GRID_SIZE = 28;
 export const PLANNER_STORAGE_KEY = 'ac-island-planner-v1';
+export const plannerReferenceDefaults: PlannerReferenceLayer = {
+  imageDataUrl: null,
+  visible: true,
+  opacity: 0.55,
+  scale: 1,
+  offsetX: 0,
+  offsetY: 0,
+  locked: true
+};
 
 export const terrainPalette: { key: TerrainType; label: string; color: string }[] = [
   { key: 'grass', label: 'Grass', color: '#a9d78f' },
