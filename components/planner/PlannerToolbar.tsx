@@ -26,12 +26,14 @@ function ToolButton({
 export function PlannerToolbar({
   activeTool,
   brushEnabled,
+  brushSize,
   orientation,
   onSelectTerrain,
   onSelectObject,
   onSelectErase,
   onSelectMove,
   onToggleBrush,
+  onBrushSize,
   onRotatePlacement,
   onDuplicateSelected,
   onUndo,
@@ -40,12 +42,14 @@ export function PlannerToolbar({
 }: {
   activeTool: PlannerTool;
   brushEnabled: boolean;
+  brushSize: number;
   orientation: 'horizontal' | 'vertical';
   onSelectTerrain: (terrain: TerrainType) => void;
   onSelectObject: (objectId: string) => void;
   onSelectErase: () => void;
   onSelectMove: () => void;
   onToggleBrush: () => void;
+  onBrushSize: (size: number) => void;
   onRotatePlacement: () => void;
   onDuplicateSelected: () => void;
   onUndo: () => void;
@@ -71,6 +75,18 @@ export function PlannerToolbar({
         <div className="mt-2">
           <ToolButton active={brushEnabled} onClick={onToggleBrush}>{brushEnabled ? 'Brush: On' : 'Brush: Off'}</ToolButton>
         </div>
+        <label className="mt-2 block rounded-xl bg-slate-100 px-3 py-2 text-sm dark:bg-slate-800">
+          Brush Size: {brushSize}
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={1}
+            value={brushSize}
+            onChange={(event) => onBrushSize(Number(event.target.value))}
+            className="mt-1 w-full"
+          />
+        </label>
       </section>
 
       <section>

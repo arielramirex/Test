@@ -6,6 +6,7 @@ import type {
   PlannerReferenceLayer,
   TerrainType
 } from '@/src/data/islandPlanner';
+import type { RefObject } from 'react';
 import { PlannerTile } from './PlannerTile';
 import { MarkerLayer, ObjectLayer } from './MarkerLayer';
 import { ObjectGhostPreview } from './ObjectGhostPreview';
@@ -30,7 +31,8 @@ export function PlannerGrid({
   onMarkerPointerDown,
   onReferencePointerDown,
   onReferencePointerMove,
-  onReferencePointerUp
+  onReferencePointerUp,
+  viewportRef
 }: {
   terrains: TerrainType[];
   objects: PlannerObjectInstance[];
@@ -52,6 +54,7 @@ export function PlannerGrid({
   onReferencePointerDown: (clientX: number, clientY: number) => void;
   onReferencePointerMove: (clientX: number, clientY: number) => void;
   onReferencePointerUp: () => void;
+  viewportRef?: RefObject<HTMLDivElement>;
 }) {
   const gridSize = calibration.gridSize;
   const tileSize = calibration.tileSize;
@@ -63,7 +66,7 @@ export function PlannerGrid({
   const showObjects = overlayMode === 'full';
 
   return (
-    <div className="overflow-auto rounded-2xl border border-white/40 bg-white/70 p-2 shadow-float dark:border-slate-700 dark:bg-slate-900/60">
+    <div ref={viewportRef} className="overflow-auto rounded-2xl border border-white/40 bg-white/70 p-2 shadow-float dark:border-slate-700 dark:bg-slate-900/60">
       <div
         className="relative"
         style={{ width: width + Math.abs(calibration.offsetX) + 8, height: height + Math.abs(calibration.offsetY) + 8 }}

@@ -26,8 +26,18 @@ export type PlannerObjectInstance = {
 };
 
 export type PlannerSnapshot = {
+  id?: string;
+  name?: string;
   terrains: TerrainType[];
   objects: PlannerObjectInstance[];
+  markers?: PlannerMarker[];
+  activeTool?: PlannerTool;
+  overlayMode?: OverlayMode;
+  calibration?: GridCalibration;
+  referenceLayer?: PlannerReferenceLayer;
+  placementOrientation?: 'horizontal' | 'vertical';
+  brushEnabled?: boolean;
+  brushSize?: number;
 };
 
 export type PlannerReferenceLayer = {
@@ -63,6 +73,8 @@ export type PlannerMarker = {
 
 export const PLANNER_GRID_SIZE = 28;
 export const PLANNER_STORAGE_KEY = 'ac-island-planner-v1';
+export const PLANNER_LAYOUTS_KEY = 'ac-island-layouts-v1';
+export const PLANNER_ACTIVE_LAYOUT_KEY = 'ac-island-active-layout-v1';
 export const plannerReferenceDefaults: PlannerReferenceLayer = {
   imageDataUrl: null,
   visible: true,
