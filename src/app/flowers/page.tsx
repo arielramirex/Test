@@ -64,7 +64,7 @@ export default function FlowersPage() {
               badges={<LeafBadge label={`Chance ${entry.breedingChance}`} tone="good" />}
             >
               <p className="mb-2 font-bold">
-                {entry.parentColor1} + {entry.parentColor2} -> {entry.resultColor}
+                {entry.parentColor1} + {entry.parentColor2} {'->'} {entry.resultColor}
               </p>
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">{entry.parentColor1}</span>
