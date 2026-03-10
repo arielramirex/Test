@@ -55,3 +55,18 @@ body {
   background: inherit;
   border-radius: 4px;
 }
+
+.hero-panel {
+  @apply rounded-[2rem] border border-white/60 bg-white/60 shadow-float backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/55;
+}
+
+.hero-logo-shell {
+  @apply flex w-full max-w-[28rem] items-center justify-center rounded-[2rem] bg-white/78 px-5 py-4 shadow-float backdrop-blur-sm dark:bg-slate-950/60;
+}
+
+.hero-logo-image {
+  width: min(100%, 420px);
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
