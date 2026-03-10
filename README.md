@@ -1,74 +1,20 @@
-# Nook Companion
+# Nook Companion (Static GitHub Pages App)
 
-Nook Companion is a fully static Next.js (App Router + TypeScript) companion app with an Animal Crossing-inspired cozy UI.
+Nook Companion is a static Next.js + TailwindCSS Animal Crossing-inspired companion guide.
 
-## Static-Only Setup
+## Static-Only Architecture
+- Static export only (`output: "export"`)
 - No backend
-- No API routes
 - No database
-- All data comes from local JSON files
-- All filtering, sorting, searching, and calculators run client-side
+- No API routes
+- No server actions
+- All data is local TypeScript data in `src/data`
 
-## GitHub Pages Export Configuration
-`next.config.js` is configured with:
-- `output: 'export'`
-- `basePath: '/Test'`
-- `assetPrefix: '/Test/'`
-
-## Features
-1. Redd-inspired Art Guide (`/art`)
-2. Blathers/CJ-inspired Critter Price Guide (`/critters`)
-3. Leif-inspired Flower Breeding Calculator (`/flowers`)
-4. Isabelle-inspired Seasonal Dashboard (`/seasonal`)
-5. Tom Nook-inspired High Value Items (`/items`)
-6. Villager Popularity page (`/villagers`)
-7. Dark mode toggle with `localStorage` persistence
-
-## UI Components
-- `LeafBadge`
-- `SpeechBubbleCard`
-- `IslandCard`
-- `PastelButton`
-- `FloatingNavigationBar`
-- `ToggleSwitch`
-
-## Folder Structure
-```text
-.
-|- .github/workflows/deploy.yml
-|- app/
-|  |- art/page.tsx
-|  |- critters/page.tsx
-|  |- flowers/page.tsx
-|  |- items/page.tsx
-|  |- seasonal/page.tsx
-|  |- villagers/page.tsx
-|  |- globals.css
-|  |- layout.tsx
-|  `- page.tsx
-|- components/
-|  |- features/ThemeControl.tsx
-|  |- layout/FloatingNavigationBar.tsx
-|  |- layout/IslandCard.tsx
-|  `- ui/
-|     |- CharacterPlaceholder.tsx
-|     |- LeafBadge.tsx
-|     |- PastelButton.tsx
-|     |- SpeechBubbleCard.tsx
-|     `- ToggleSwitch.tsx
-|- data/
-|  |- art.json
-|  |- critters.json
-|  |- flowers.json
-|  |- items.json
-|  `- villagers.json
-|- lib/
-|  |- hooks/useTheme.tsx
-|  `- types.ts
-|- next.config.js
-|- package.json
-`- tailwind.config.ts
-```
+## Tech Stack
+- Next.js (App Router)
+- TypeScript
+- TailwindCSS
+- Local image assets in `public/images`
 
 ## Local Development
 ```bash
@@ -76,39 +22,77 @@ npm install
 npm run dev
 ```
 
-## Production Build (Static Export)
+## Production Build
 ```bash
 npm run build
 ```
-Build output is generated in `out/`.
 
-## GitHub Repository Setup
-1. Create a GitHub repository named `nook-companion`.
-2. Push this project to the `main` branch.
+With `output: "export"`, `npm run build` generates the static site in `out/`.
 
-Example commands:
-```bash
-git init
-git add .
-git commit -m "Initial Nook Companion static app"
-git branch -M main
-git remote add origin https://github.com/<your-username>/nook-companion.git
-git push -u origin main
-```
+## GitHub Pages Notes
+This repo is configured for a GitHub Pages repo named `Test`:
+- `basePath`: `/Test` in production
+- `assetPrefix`: `/Test/` in production
+- images are `unoptimized` for static export
 
-## Enable GitHub Pages
-1. Open repository on GitHub.
-2. Go to `Settings` -> `Pages`.
-3. Set `Build and deployment` source to `GitHub Actions`.
+`next.config.js` uses:
+- dev: no base path
+- production: `/Test` base path and asset prefix
 
-## Automatic Deployment Workflow
+## Deployment Workflow
 Workflow file: `.github/workflows/deploy.yml`
 
-On push to `main`, it automatically:
-1. Installs dependencies
-2. Runs static build/export
-3. Uploads `out/` artifact
-4. Deploys to GitHub Pages
+On push to `main`, GitHub Actions:
+1. Uses Node 20
+2. Installs dependencies (`npm ci` when lockfile exists, otherwise `npm install`)
+3. Runs `npm run build`
+4. Uploads `out/`
+5. Deploys to GitHub Pages using official Pages actions
 
-After deploy, site URL:
-- `https://arielramirezx.github.io/Test/`
+## Project Structure
+```text
+src/
+  app/
+    art/page.tsx
+    critters/page.tsx
+    flowers/page.tsx
+    items/page.tsx
+    seasonal/page.tsx
+    villagers/page.tsx
+    globals.css
+    layout.tsx
+    page.tsx
+  data/
+    art.ts
+    critters.ts
+    flowers.ts
+    items.ts
+    seasonal.ts
+    types.ts
+    villagers.ts
+components/
+  layout/
+  ui/
+  features/
+public/images/
+  home/
+  flowers/
+  critters/
+  art/
+  items/
+  villagers/
+```
+
+## UI + Theming
+- Cozy pastel day palette and nighttime island dark mode
+- Class-based dark mode
+- Theme preference persisted in `localStorage` (`nook-theme`)
+- Reusable UI primitives (`SectionHero`, `PreviewCard`, `IslandCard`, `LeafBadge`, `SpeechBubbleCard`, `ThemedButton`, `ThemeToggle`, `FilterBar`, `EmptyState`, `ImageWithFallback`)
+
+## Data Coverage
+- Flowers (hybrid recipes)
+- Critters (fish, bugs, sea creatures)
+- Redd art (real vs fake comparisons)
+- High value items
+- Villagers
+- Seasonal monthly dashboard
